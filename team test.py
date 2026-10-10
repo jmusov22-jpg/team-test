@@ -18,7 +18,6 @@ class TextToolApp:
         self.entry_input.pack(pady=5)
 
         btn_style = {"font": ("Arial", 10, "bold"), "width": 22, "pady": 4, "fg": "white"}
-
         buttons = [
             ("Привітатися", "#4CAF50", self.greet_user),
             ("Порахувати символи", "#2196F3", self.count_chars),
