@@ -18,3 +18,7 @@ def reverse_text():
 def to_upper():
     text = entry_input.get()
     label_result.config(text=text.upper())
+
+def reset_all():
+    entry_input.delete(0, tk.END)
+    label_result.config(text="")
