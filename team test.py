@@ -14,3 +14,7 @@ def count_chars():
 def reverse_text():
     text = entry_input.get()
     label_result.config(text=f"Навпаки: {text[::-1]}")
+
+def to_upper():
+    text = entry_input.get()
+    label_result.config(text=text.upper())
