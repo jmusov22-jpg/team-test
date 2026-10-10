@@ -11,3 +11,6 @@ def greet_user():
 def count_chars():
     text = entry_input.get()
     label_result.config(text=f"Символів: {len(text)}")
+def reverse_text():
+    text = entry_input.get()
+    label_result.config(text=f"Навпаки: {text[::-1]}")
