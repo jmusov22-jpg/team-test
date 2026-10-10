@@ -22,3 +22,8 @@ def to_upper():
 def reset_all():
     entry_input.delete(0, tk.END)
     label_result.config(text="")
+
+root = tk.Tk()
+root.title("Мультитул Tkinter")
+root.geometry("400x420")
+root.resizable(False, False)
