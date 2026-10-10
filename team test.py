@@ -7,3 +7,7 @@ def greet_user():
         messagebox.showwarning("Попередження", "Введіть текст!")
         return
     label_result.config(text=f"Привіт, {text}!")
+    
+def count_chars():
+    text = entry_input.get()
+    label_result.config(text=f"Символів: {len(text)}")
