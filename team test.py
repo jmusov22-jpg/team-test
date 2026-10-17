@@ -3,6 +3,10 @@ from tkinter import messagebox
 
 
 class TextToolApp:
+    placeholder = "Напишіть щось..."
+    input_fg = "#34413F"
+    placeholder_fg = "#888888"
+
     def __init__(self, root):
         self.root = root
         self.root.title("Мультитул Tkinter")
@@ -21,7 +25,16 @@ class TextToolApp:
             fg="#34413F",
         ).pack(pady=10)
 
-        self.entry_input = tk.Entry(self.root, font=("Arial", 12), width=25, justify="center")
+        self.entry_input = tk.Entry(
+            self.root,
+            font=("Arial", 12),
+            width=25,
+            justify="center",
+            fg=self.placeholder_fg,
+        )
+        self.entry_input.insert(0, self.placeholder)
+        self.entry_input.bind("<FocusIn>", self._clear_placeholder)
+        self.entry_input.bind("<FocusOut>", self._show_placeholder)
         self.entry_input.pack(pady=5)
 
         btn_style = {
@@ -69,7 +82,18 @@ class TextToolApp:
         self.label_result.pack(anchor="center", pady=(8, 0))
 
     def get_text(self):
-        return self.entry_input.get()
+        text = self.entry_input.get()
+        return "" if text == self.placeholder else text
+
+    def _clear_placeholder(self, _event):
+        if self.entry_input.get() == self.placeholder:
+            self.entry_input.delete(0, tk.END)
+            self.entry_input.config(fg=self.input_fg)
+
+    def _show_placeholder(self, _event=None):
+        if not self.entry_input.get():
+            self.entry_input.insert(0, self.placeholder)
+            self.entry_input.config(fg=self.placeholder_fg)
 
     def set_result(self, text):
         self.label_result.config(text=text)
@@ -95,6 +119,7 @@ class TextToolApp:
 
     def reset_all(self):
         self.entry_input.delete(0, tk.END)
+        self._show_placeholder()
         self.set_result("")
 
 
