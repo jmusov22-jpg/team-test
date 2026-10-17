@@ -8,37 +8,61 @@ class TextToolApp:
         self.root.title("Мультитул Tkinter")
         self.root.geometry("420x500")
         self.root.resizable(False, False)
+        self.root.configure(bg="#F4F6F5")
 
         self._create_widgets()
 
     def _create_widgets(self):
-        tk.Label(self.root, text="Введіть текст:", font=("Arial", 12)).pack(pady=10)
+        tk.Label(
+            self.root,
+            text="Введіть текст:",
+            font=("Arial", 12),
+            bg="#F4F6F5",
+            fg="#34413F",
+        ).pack(pady=10)
 
         self.entry_input = tk.Entry(self.root, font=("Arial", 12), width=25, justify="center")
         self.entry_input.pack(pady=5)
 
-        btn_style = {"font": ("Arial", 10, "bold"), "width": 22, "pady": 4, "fg": "white"}
+        btn_style = {
+            "font": ("Arial", 10, "bold"),
+            "width": 22,
+            "pady": 4,
+            "fg": "white",
+            "bg": "#668F8B",
+            "activebackground": "#587D79",
+            "activeforeground": "white",
+            "relief": "flat",
+            "bd": 0,
+            "cursor": "hand2",
+        }
         buttons = [
-            ("Привітатися", "#4CAF50", self.greet_user),
-            ("Порахувати символи", "#2196F3", self.count_chars),
-            ("Перевернути текст", "#FF9800", self.reverse_text),
-            ("У великі літери", "#9C27B0", self.to_upper),
-            ("Очистити", "#F44336", self.reset_all),
+            ("Привітатися", self.greet_user),
+            ("Порахувати символи", self.count_chars),
+            ("Перевернути текст", self.reverse_text),
+            ("У великі літери", self.to_upper),
+            ("Очистити", self.reset_all),
         ]
 
-        for text, bg, command in buttons:
-            tk.Button(self.root, text=text, bg=bg, command=command, **btn_style).pack(pady=4)
+        for text, command in buttons:
+            tk.Button(self.root, text=text, command=command, **btn_style).pack(pady=4)
 
-        self.result_frame = tk.Frame(self.root, bg="#f0f0f0", bd=2, relief="solid", padx=10, pady=10)
+        self.result_frame = tk.Frame(self.root, bg="#E8EEEC", bd=0, padx=10, pady=10)
         self.result_frame.pack(fill="x", padx=20, pady=(10, 0))
 
-        tk.Label(self.result_frame, text="Результат:", font=("Arial", 11, "bold"), bg="#f0f0f0").pack(anchor="w")
+        tk.Label(
+            self.result_frame,
+            text="Результат:",
+            font=("Arial", 11, "bold"),
+            bg="#E8EEEC",
+            fg="#34413F",
+        ).pack(anchor="w")
         self.label_result = tk.Label(
             self.result_frame,
             text="",
             font=("Arial", 12, "bold"),
-            fg="#333",
-            bg="#f0f0f0",
+            fg="#34413F",
+            bg="#E8EEEC",
             justify="center",
             wraplength=300,
         )
