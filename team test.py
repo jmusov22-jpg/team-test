@@ -80,6 +80,12 @@ class TextToolApp:
             wraplength=300,
         )
         self.label_result.pack(anchor="center", pady=(8, 0))
+        tk.Button(
+            self.result_frame,
+            text="Скопіювати",
+            command=self.copy_result,
+            **btn_style,
+        ).pack(pady=(10, 0))
 
     def get_text(self):
         text = self.entry_input.get()
@@ -97,6 +103,16 @@ class TextToolApp:
 
     def set_result(self, text):
         self.label_result.config(text=text)
+
+    def copy_result(self):
+        result = self.label_result.cget("text")
+        if not result:
+            messagebox.showwarning("Попередження", "Спочатку створіть результат!")
+            return
+
+        self.root.clipboard_clear()
+        self.root.clipboard_append(result)
+        self.root.update()
 
     def greet_user(self):
         text = self.get_text().strip()
