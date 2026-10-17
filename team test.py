@@ -1,4 +1,3 @@
-from logging import root
 import tkinter as tk
 from tkinter import messagebox
 
@@ -7,7 +6,7 @@ class TextToolApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Мультитул Tkinter")
-        self.root.geometry("400x420")
+        self.root.geometry("420x500")
         self.root.resizable(False, False)
 
         self._create_widgets()
@@ -30,8 +29,20 @@ class TextToolApp:
         for text, bg, command in buttons:
             tk.Button(self.root, text=text, bg=bg, command=command, **btn_style).pack(pady=4)
 
-        self.label_result = tk.Label(self.root, text="", font=("Arial", 12, "bold"), fg="#333")
-        self.label_result.pack(pady=15)
+        self.result_frame = tk.Frame(self.root, bg="#f0f0f0", bd=2, relief="solid", padx=10, pady=10)
+        self.result_frame.pack(fill="x", padx=20, pady=(10, 0))
+
+        tk.Label(self.result_frame, text="Результат:", font=("Arial", 11, "bold"), bg="#f0f0f0").pack(anchor="w")
+        self.label_result = tk.Label(
+            self.result_frame,
+            text="",
+            font=("Arial", 12, "bold"),
+            fg="#333",
+            bg="#f0f0f0",
+            justify="center",
+            wraplength=300,
+        )
+        self.label_result.pack(anchor="center", pady=(8, 0))
 
     def get_text(self):
         return self.entry_input.get()
@@ -71,17 +82,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-def buttons():
-    btn_style = {"font": ("Arial", 10, "bold"), "width": 22, "pady": 4, "fg": "white"}
-    tk.Button(root, text="Привітатися", bg="#4CAF50", command=greet_user, **btn_style).pack(pady=4)
-    tk.Button(root, text="Порахувати символи", bg="#2196F3", command=count_chars, **btn_style).pack(pady=4)
-    tk.Button(root, text="Перевернути текст", bg="#FF9800", command=reverse_text, **btn_style).pack(pady=4)
-    tk.Button(root, text="У великі літери", bg="#9C27B0", command=to_upper, **btn_style).pack(pady=4)
-    tk.Button(root, text="Очистити", bg="#F44336", command=reset_all, **btn_style).pack(pady=4)
-
-def widgets():
-    tk.Label(root, text="Введіть текст:", font=("Arial", 12)).pack(pady=10)
-
-    entry_input = tk.Entry(root, font=("Arial", 12), width=25, justify="center")
-    entry_input.pack(pady=5)
