@@ -4,75 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TeamChat</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
   </head>
   <body>
-    <header>
+    <header class="app-header">
       <h1>TeamChat</h1>
     </header>
 
-    <main>
-      <aside aria-labelledby="chats-heading">
-        <h2 id="chats-heading">Чати</h2>
-        <ul>
-          <li>
-            <button type="button" aria-pressed="true">
-              <span class="avatar" aria-hidden="true">ОМ</span>
-              <span>
-                <span>Олена Мельник</span>
-                <span>Привіт! Як справи?</span>
-              </span>
-              <time datetime="2026-10-31T14:10">14:10</time>
-            </button>
-          </li>
-          <li>
-            <button type="button" aria-pressed="false">
-              <span class="avatar" aria-hidden="true">АК</span>
-              <span>
-                <span>Андрій Коваль</span>
-                <span>Дякую за допомогу!</span>
-              </span>
-              <time datetime="2026-10-31T13:42">13:42</time>
-            </button>
-          </li>
-          <li>
-            <button type="button" aria-pressed="false">
-              <span class="avatar" aria-hidden="true">ІП</span>
-              <span>
-                <span>Ірина Петренко</span>
-                <span>До зустрічі завтра</span>
-              </span>
-              <time datetime="2026-10-30T18:25">Вчора</time>
-            </button>
-          </li>
-        </ul>
+    <main class="chat-app">
+      <aside class="chat-sidebar" aria-labelledby="chats-heading">
+        <div class="sidebar-heading">
+          <h2 id="chats-heading">Чати</h2>
+          <span class="chat-count" id="chat-count" aria-label="Кількість чатів"></span>
+        </div>
+        <ul class="chat-list" id="chat-list" aria-label="Список чатів"></ul>
       </aside>
 
-      <section aria-labelledby="conversation-heading">
-        <header>
-          <span class="avatar" aria-hidden="true">ОМ</span>
-          <h2 id="conversation-heading">Олена Мельник</h2>
+      <section class="conversation" aria-labelledby="conversation-heading">
+        <header class="conversation-header">
+          <span class="avatar" id="conversation-avatar" aria-hidden="true"></span>
+          <div>
+            <h2 id="conversation-heading"></h2>
+            <p>особистий чат</p>
+          </div>
         </header>
 
-        <ol aria-label="Повідомлення">
-          <li>
-            <article>
-              <p><strong>Олена Мельник</strong></p>
-              <p>Привіт! Як справи?</p>
-              <time datetime="2026-10-31T14:10">14:10</time>
-            </article>
-          </li>
-          <li>
-            <article>
-              <p><strong>Ви</strong></p>
-              <p>Привіт! Усе добре, дякую. А в тебе?</p>
-              <time datetime="2026-10-31T14:12">14:12</time>
-            </article>
-          </li>
-        </ol>
+        <ol class="messages" id="messages" aria-label="Повідомлення"></ol>
 
-        <form>
-          <label for="message">Повідомлення</label>
-          <input id="message" name="message" type="text" placeholder="Напишіть повідомлення...">
+        <form class="message-form" id="message-form">
+          <label class="visually-hidden" for="message">Повідомлення</label>
+          <input id="message" name="message" type="text" placeholder="Напишіть повідомлення..." autocomplete="off" required>
           <button type="submit">Надіслати</button>
         </form>
       </section>
