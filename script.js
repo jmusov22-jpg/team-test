@@ -17,6 +17,8 @@ const chats = [
     color: "blue",
     messages: [
       { sender: "contact", text: "Дякую за допомогу!", time: "13:42", datetime: "2026-10-31T13:42" },
+      { sender: "you", text: "Радий був допомогти!", time: "13:45", datetime: "2026-10-31T13:45" },
+      { sender: "contact", text: "Наступного разу пригощу кавою 🙂", time: "13:47", datetime: "2026-10-31T13:47" },
     ],
   },
   {
@@ -26,6 +28,8 @@ const chats = [
     color: "purple",
     messages: [
       { sender: "contact", text: "До зустрічі завтра", time: "Вчора", datetime: "2026-10-30T18:25" },
+      { sender: "you", text: "Так, до зустрічі! Буду вчасно.", time: "Вчора", datetime: "2026-10-30T18:28" },
+      { sender: "contact", text: "Чудово, тоді до завтра!", time: "Вчора", datetime: "2026-10-30T18:30" },
     ],
   },
   {
@@ -35,6 +39,8 @@ const chats = [
     color: "green",
     messages: [
       { sender: "contact", text: "Надіслав тобі фото з подорожі 📸", time: "12:18", datetime: "2026-10-31T12:18" },
+      { sender: "you", text: "Краєвид неймовірний! Де це?", time: "12:21", datetime: "2026-10-31T12:21" },
+      { sender: "contact", text: "Це Карпати, біля озера Синевир.", time: "12:24", datetime: "2026-10-31T12:24" },
     ],
   },
   {
@@ -44,6 +50,8 @@ const chats = [
     color: "gold",
     messages: [
       { sender: "contact", text: "План на вихідні ще в силі?", time: "11:06", datetime: "2026-10-31T11:06" },
+      { sender: "you", text: "Так! Зустрінемось у суботу о 12?", time: "11:10", datetime: "2026-10-31T11:10" },
+      { sender: "contact", text: "Домовились, до зустрічі!", time: "11:12", datetime: "2026-10-31T11:12" },
     ],
   },
 ];
