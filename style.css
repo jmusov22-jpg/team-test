@@ -403,45 +403,111 @@ input {
   }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 600px) {
   .chat-app {
-    grid-template-columns: 156px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 148px minmax(0, 1fr);
+    height: calc(100dvh - 76px);
   }
 
-  .sidebar-heading h2 {
-    font-size: 0.9rem;
+  .chat-sidebar {
+    min-height: 0;
+    padding: 12px 10px 8px;
+    border-right: 0;
+    border-bottom: 1px solid #e9edf4;
+  }
+
+  .sidebar-heading {
+    padding: 0 2px 9px;
+  }
+
+  .chat-list {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 1px 2px 6px;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scroll-snap-type: x proximity;
+  }
+
+  .chat-list > li {
+    flex: 0 0 180px;
+    min-width: 0;
   }
 
   .chat-item {
-    grid-template-columns: 34px minmax(0, 1fr);
-    gap: 7px;
-    padding: 9px 5px;
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 9px;
+    padding: 9px 8px;
+    scroll-snap-align: start;
   }
 
   .chat-item .avatar {
-    width: 34px;
-    height: 34px;
-    font-size: 0.64rem;
-  }
-
-  .chat-name {
+    width: 38px;
+    height: 38px;
     font-size: 0.7rem;
   }
 
+  .chat-name {
+    font-size: 0.76rem;
+  }
+
   .chat-preview {
-    font-size: 0.64rem;
+    font-size: 0.68rem;
   }
 
   .chat-time {
     display: none;
   }
 
+  .conversation {
+    min-height: 0;
+  }
+
   .conversation-header h2 {
-    font-size: 0.82rem;
+    font-size: 0.88rem;
   }
 
   .conversation-header p {
-    font-size: 0.68rem;
+    font-size: 0.72rem;
+  }
+
+  .message-form input,
+  .message-form button {
+    min-height: 44px;
+  }
+
+  .message-form button {
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .chat-app {
+    grid-template-rows: 140px minmax(0, 1fr);
+  }
+
+  .chat-list > li {
+    flex-basis: 164px;
+  }
+
+  .conversation-header {
+    padding-inline: 10px;
+  }
+
+  .message-form {
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .message-form input {
+    padding-inline: 10px;
+  }
+
+  .message-form button {
+    padding-inline: 9px;
+    font-size: 0.72rem;
   }
 }
 
