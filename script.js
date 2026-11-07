@@ -4,6 +4,7 @@ const chats = [
     name: "Олена Мельник",
     initials: "ОМ",
     color: "coral",
+    status: "online",
     messages: [
       { sender: "contact", text: "Привіт! Як справи?", time: "14:10", datetime: "2026-10-31T14:10" },
       { sender: "you", text: "Привіт! Усе добре, дякую. А в тебе?", time: "14:12", datetime: "2026-10-31T14:12" },
@@ -15,6 +16,7 @@ const chats = [
     name: "Андрій Коваль",
     initials: "АК",
     color: "blue",
+    status: "away",
     messages: [
       { sender: "contact", text: "Дякую за допомогу!", time: "13:42", datetime: "2026-10-31T13:42" },
       { sender: "you", text: "Радий був допомогти!", time: "13:45", datetime: "2026-10-31T13:45" },
@@ -26,6 +28,7 @@ const chats = [
     name: "Ірина Петренко",
     initials: "ІП",
     color: "purple",
+    status: "offline",
     messages: [
       { sender: "contact", text: "До зустрічі завтра", time: "Вчора", datetime: "2026-10-30T18:25" },
       { sender: "you", text: "Так, до зустрічі! Буду вчасно.", time: "Вчора", datetime: "2026-10-30T18:28" },
@@ -37,6 +40,7 @@ const chats = [
     name: "Максим Бондар",
     initials: "МБ",
     color: "green",
+    status: "busy",
     messages: [
       { sender: "contact", text: "Надіслав тобі фото з подорожі 📸", time: "12:18", datetime: "2026-10-31T12:18" },
       { sender: "you", text: "Краєвид неймовірний! Де це?", time: "12:21", datetime: "2026-10-31T12:21" },
@@ -48,6 +52,7 @@ const chats = [
     name: "Софія Шевченко",
     initials: "СШ",
     color: "gold",
+    status: "online",
     messages: [
       { sender: "contact", text: "План на вихідні ще в силі?", time: "11:06", datetime: "2026-10-31T11:06" },
       { sender: "you", text: "Так! Зустрінемось у суботу о 12?", time: "11:10", datetime: "2026-10-31T11:10" },
@@ -60,6 +65,7 @@ const chatList = document.querySelector("#chat-list");
 const chatCount = document.querySelector("#chat-count");
 const conversationAvatar = document.querySelector("#conversation-avatar");
 const conversationHeading = document.querySelector("#conversation-heading");
+const conversationStatus = document.querySelector("#conversation-status");
 const messagesList = document.querySelector("#messages");
 const messageForm = document.querySelector("#message-form");
 const messageInput = document.querySelector("#message");
@@ -68,6 +74,11 @@ const autoTranslateInput = document.querySelector("#auto-translate");
 const improveMessageButton = document.querySelector("#improve-message");
 const recordVoiceButton = document.querySelector("#record-voice");
 const featureStatus = document.querySelector("#feature-status");
+const createGroupButton = document.querySelector("#create-group-button");
+const groupForm = document.querySelector("#group-form");
+const groupNameInput = document.querySelector("#group-name");
+const groupMembersSelect = document.querySelector("#group-members");
+const cancelGroupButton = document.querySelector("#cancel-group");
 // Configure same-origin routes returning { suggestion } / { translation }; keep API keys on the server.
 const serviceEndpoints = {
   improve: null,
@@ -77,6 +88,12 @@ let activeChatId = chats[0].id;
 let searchQuery = "";
 let activeRecorder = null;
 let activeAudioStream = null;
+const statusLabels = {
+  online: "онлайн",
+  away: "відійшов",
+  busy: "не турбувати",
+  offline: "офлайн",
+};
 
 function showFeatureStatus(message) {
   featureStatus.textContent = message;
@@ -126,6 +143,26 @@ function getFilteredChats() {
   return chats.filter((chat) => chat.name.toLowerCase().includes(normalizedQuery));
 }
 
+function getChatStatus(chat) {
+  if (!chat.isGroup) {
+    return statusLabels[chat.status] || statusLabels.offline;
+  }
+
+  const onlineMembers = chat.members.filter((member) => member.status === "online").length;
+  return `${chat.members.length} учасники · ${onlineMembers} онлайн`;
+}
+
+function populateGroupMembers() {
+  groupMembersSelect.replaceChildren();
+
+  chats.filter((chat) => !chat.isGroup).forEach((chat) => {
+    const option = document.createElement("option");
+    option.value = chat.id;
+    option.textContent = `${chat.name} (${statusLabels[chat.status]})`;
+    groupMembersSelect.append(option);
+  });
+}
+
 function renderChatList() {
   const visibleChats = getFilteredChats();
   chatCount.textContent = String(visibleChats.length);
@@ -147,6 +184,7 @@ function renderChatList() {
     const item = document.createElement("li");
     const button = document.createElement("button");
     const avatar = document.createElement("span");
+    const status = document.createElement("span");
     const details = document.createElement("span");
     const name = document.createElement("span");
     const preview = document.createElement("span");
@@ -160,6 +198,9 @@ function renderChatList() {
     avatar.className = `avatar avatar-${chat.color}`;
     avatar.setAttribute("aria-hidden", "true");
     avatar.textContent = chat.initials;
+    status.className = `user-status status-${chat.isGroup ? "group" : chat.status}`;
+    status.setAttribute("aria-label", getChatStatus(chat));
+    status.title = getChatStatus(chat);
 
     details.className = "chat-details";
     name.className = "chat-name";
@@ -171,6 +212,7 @@ function renderChatList() {
     time.textContent = lastMessage.time;
 
     details.append(name, preview);
+    avatar.append(status);
     button.append(avatar, details, time);
     item.append(button);
     chatList.append(item);
@@ -190,7 +232,7 @@ function renderMessages(chat) {
     item.className = `message message-${message.sender}`;
     article.className = "message-bubble";
     sender.className = "message-sender";
-    sender.textContent = `${message.sender === "you" ? "Ви" : chat.name}${message.edited ? " · змінено" : ""}`;
+    sender.textContent = `${message.sender === "you" ? "Ви" : (message.author || chat.name)}${message.edited ? " · змінено" : ""}`;
     time.className = "message-time";
     time.dateTime = message.datetime;
     time.textContent = message.time;
@@ -342,6 +384,8 @@ function selectChat(chatId) {
   conversationAvatar.className = `avatar avatar-${chat.color}`;
   conversationAvatar.textContent = chat.initials;
   conversationHeading.textContent = chat.name;
+  conversationStatus.textContent = getChatStatus(chat);
+  conversationStatus.className = `conversation-status status-text-${chat.isGroup ? "group" : chat.status}`;
   renderChatList();
   renderMessages(chat);
 
@@ -387,6 +431,54 @@ messageForm.addEventListener("submit", (event) => {
     text,
     time,
     datetime: now.toISOString(),
+  });
+
+  createGroupButton.addEventListener("click", () => {
+    populateGroupMembers();
+    groupForm.hidden = false;
+    createGroupButton.hidden = true;
+    groupNameInput.focus();
+  });
+
+  cancelGroupButton.addEventListener("click", () => {
+    groupForm.reset();
+    groupForm.hidden = true;
+    createGroupButton.hidden = false;
+  });
+
+  groupForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const name = groupNameInput.value.trim();
+    const memberIds = [...groupMembersSelect.selectedOptions].map((option) => option.value);
+
+    if (!name || memberIds.length === 0) {
+      return;
+    }
+
+    const members = chats.filter((chat) => memberIds.includes(chat.id));
+    const group = {
+      id: `group-${Date.now()}`,
+      name,
+      initials: name.slice(0, 2).toUpperCase(),
+      color: "blue",
+      isGroup: true,
+      members,
+      messages: [
+        {
+          sender: "contact",
+          author: "Система",
+          text: `Групу створено. Учасники: ${members.map((member) => member.name).join(", ")}.`,
+          time: new Date().toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" }),
+          datetime: new Date().toISOString(),
+        },
+      ],
+    };
+
+    chats.push(group);
+    groupForm.reset();
+    groupForm.hidden = true;
+    createGroupButton.hidden = false;
+    selectChat(group.id);
   });
 
   messageInput.value = "";

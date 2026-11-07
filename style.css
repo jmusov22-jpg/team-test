@@ -84,6 +84,71 @@ input {
   font-weight: 700;
 }
 
+.create-group-button {
+  width: calc(100% - 20px);
+  margin: 0 10px 12px;
+  padding: 9px 10px;
+  color: #52688e;
+  background: #edf2fb;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.create-group-button:hover,
+.create-group-submit:hover {
+  background: #e2eafa;
+}
+
+.group-form {
+  display: grid;
+  gap: 7px;
+  margin: 0 10px 14px;
+  padding: 12px;
+  background: #f1f4fb;
+  border-radius: 11px;
+  font-size: 0.75rem;
+}
+
+.group-form input,
+.group-form select {
+  width: 100%;
+  padding: 8px;
+  color: #202b3c;
+  background: #fff;
+  border: 1px solid #dfe6f3;
+  border-radius: 7px;
+  font: inherit;
+}
+
+.group-form select {
+  min-height: 82px;
+}
+
+.group-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+.group-form .tool-button,
+.create-group-submit {
+  min-height: 32px;
+  padding: 0 9px;
+  font-size: 0.72rem;
+}
+
+.create-group-submit {
+  color: #fff;
+  background: #5578d8;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
 .chat-search-wrap {
   padding: 0 10px 14px;
 }
@@ -150,6 +215,7 @@ input {
 }
 
 .avatar {
+  position: relative;
   display: grid;
   flex: 0 0 auto;
   width: 44px;
@@ -162,6 +228,36 @@ input {
   font-size: 0.78rem;
   font-weight: 750;
   letter-spacing: 0.01em;
+}
+
+.user-status {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
+
+.status-online {
+  background: #35b87a;
+}
+
+.status-away {
+  background: #e5a331;
+}
+
+.status-busy {
+  background: #d65b63;
+}
+
+.status-offline {
+  background: #a7b0be;
+}
+
+.status-group {
+  background: #5578d8;
 }
 
 .avatar-coral {
@@ -240,6 +336,27 @@ input {
   margin: 0;
   color: #8792a4;
   font-size: 0.76rem;
+}
+
+.conversation-status {
+  display: inline-block;
+}
+
+.status-text-online {
+  color: #2f9b68 !important;
+}
+
+.status-text-away,
+.status-text-busy {
+  color: #bb7b1d !important;
+}
+
+.status-text-offline {
+  color: #8792a4 !important;
+}
+
+.status-text-group {
+  color: #5578d8 !important;
 }
 
 .messages {
