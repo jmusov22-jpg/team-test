@@ -63,13 +63,37 @@ const conversationHeading = document.querySelector("#conversation-heading");
 const messagesList = document.querySelector("#messages");
 const messageForm = document.querySelector("#message-form");
 const messageInput = document.querySelector("#message");
+const chatSearchInput = document.querySelector("#chat-search");
 let activeChatId = chats[0].id;
+let searchQuery = "";
+
+function getFilteredChats() {
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  if (!normalizedQuery) {
+    return chats;
+  }
+
+  return chats.filter((chat) => chat.name.toLowerCase().includes(normalizedQuery));
+}
 
 function renderChatList() {
-  chatCount.textContent = chats.length;
+  const visibleChats = getFilteredChats();
+  chatCount.textContent = String(visibleChats.length);
   chatList.replaceChildren();
 
-  chats.forEach((chat) => {
+  if (visibleChats.length === 0) {
+    const emptyItem = document.createElement("li");
+    const emptyMessage = document.createElement("p");
+
+    emptyItem.className = "chat-empty";
+    emptyMessage.textContent = "Чатів не знайдено";
+    emptyItem.append(emptyMessage);
+    chatList.append(emptyItem);
+    return;
+  }
+
+  visibleChats.forEach((chat) => {
     const lastMessage = chat.messages[chat.messages.length - 1];
     const item = document.createElement("li");
     const button = document.createElement("button");
@@ -133,14 +157,36 @@ function renderMessages(chat) {
 }
 
 function selectChat(chatId) {
-  activeChatId = chatId;
   const chat = chats.find((item) => item.id === chatId);
+
+  if (!chat) {
+    return;
+  }
+
+  activeChatId = chatId;
   conversationAvatar.className = `avatar avatar-${chat.color}`;
   conversationAvatar.textContent = chat.initials;
   conversationHeading.textContent = chat.name;
   renderChatList();
   renderMessages(chat);
 }
+
+chatSearchInput.addEventListener("input", (event) => {
+  searchQuery = event.target.value;
+  const filteredChats = getFilteredChats();
+
+  if (filteredChats.length === 0) {
+    renderChatList();
+    return;
+  }
+
+  if (!filteredChats.some((chat) => chat.id === activeChatId)) {
+    selectChat(filteredChats[0].id);
+    return;
+  }
+
+  renderChatList();
+});
 
 messageForm.addEventListener("submit", (event) => {
   event.preventDefault();
