@@ -64,8 +64,57 @@ const messagesList = document.querySelector("#messages");
 const messageForm = document.querySelector("#message-form");
 const messageInput = document.querySelector("#message");
 const chatSearchInput = document.querySelector("#chat-search");
+const autoTranslateInput = document.querySelector("#auto-translate");
+const improveMessageButton = document.querySelector("#improve-message");
+const recordVoiceButton = document.querySelector("#record-voice");
+const featureStatus = document.querySelector("#feature-status");
+// Configure same-origin routes returning { suggestion } / { translation }; keep API keys on the server.
+const serviceEndpoints = {
+  improve: null,
+  translate: null,
+};
 let activeChatId = chats[0].id;
 let searchQuery = "";
+let activeRecorder = null;
+let activeAudioStream = null;
+
+function showFeatureStatus(message) {
+  featureStatus.textContent = message;
+}
+
+async function requestService(endpoint, payload, resultField) {
+  if (!endpoint) {
+    throw new Error("Підключіть відповідний сервіс на сервері, щоб скористатися цією функцією.");
+  }
+
+  let response;
+
+  try {
+    response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    throw new Error("Не вдалося з'єднатися із сервісом. Перевірте сервер і повторіть спробу.");
+  }
+
+  if (!response.ok) {
+    throw new Error(`Сервіс повернув помилку (${response.status}).`);
+  }
+
+  const result = await response.json();
+
+  if (!result || typeof result[resultField] !== "string" || !result[resultField].trim()) {
+    throw new Error("Сервіс повернув відповідь у неочікуваному форматі.");
+  }
+
+  return result[resultField].trim();
+}
+
+function getErrorMessage(error) {
+  return error instanceof Error ? error.message : "Сталася невідома помилка.";
+}
 
 function getFilteredChats() {
   const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -141,19 +190,145 @@ function renderMessages(chat) {
     item.className = `message message-${message.sender}`;
     article.className = "message-bubble";
     sender.className = "message-sender";
-    sender.textContent = message.sender === "you" ? "Ви" : chat.name;
-    text.className = "message-text";
-    text.textContent = message.text;
+    sender.textContent = `${message.sender === "you" ? "Ви" : chat.name}${message.edited ? " · змінено" : ""}`;
     time.className = "message-time";
     time.dateTime = message.datetime;
     time.textContent = message.time;
 
-    article.append(sender, text, time);
+    article.append(sender);
+
+    if (message.audioUrl) {
+      const audio = document.createElement("audio");
+      audio.className = "message-audio";
+      audio.controls = true;
+      audio.preload = "metadata";
+      audio.src = message.audioUrl;
+      audio.setAttribute("aria-label", "Голосове повідомлення");
+      article.append(audio);
+    } else {
+      text.className = "message-text";
+      text.textContent = message.text;
+      article.append(text);
+
+      if (message.translatedText) {
+        const translation = document.createElement("p");
+        const translationLabel = document.createElement("span");
+
+        translation.className = "message-translation";
+        translationLabel.className = "message-translation-label";
+        translationLabel.textContent = "Переклад українською";
+        translation.append(translationLabel, document.createTextNode(message.translatedText));
+        article.append(translation);
+      }
+
+      if (message.sender === "you") {
+        const editButton = document.createElement("button");
+        editButton.className = "message-edit-button";
+        editButton.type = "button";
+        editButton.textContent = "Редагувати";
+        editButton.setAttribute("aria-label", "Редагувати своє повідомлення");
+        editButton.addEventListener("click", () => openMessageEditor(chat, message, article));
+        article.append(editButton);
+      }
+    }
+
+    article.append(time);
     item.append(article);
     messagesList.append(item);
   });
 
   messagesList.scrollTop = messagesList.scrollHeight;
+}
+
+function openMessageEditor(chat, message, article) {
+  if (!article) {
+    return;
+  }
+
+  const form = document.createElement("form");
+  const textarea = document.createElement("textarea");
+  const actions = document.createElement("div");
+  const saveButton = document.createElement("button");
+  const cancelButton = document.createElement("button");
+
+  form.className = "message-edit-form";
+  textarea.className = "message-edit-input";
+  textarea.value = message.text;
+  textarea.setAttribute("aria-label", "Відредагувати повідомлення");
+  actions.className = "message-edit-actions";
+  saveButton.className = "message-action-button";
+  saveButton.type = "submit";
+  saveButton.textContent = "Зберегти";
+  cancelButton.className = "message-action-button";
+  cancelButton.type = "button";
+  cancelButton.textContent = "Скасувати";
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const updatedText = textarea.value.trim();
+
+    if (!updatedText) {
+      textarea.setCustomValidity("Повідомлення не може бути порожнім.");
+      textarea.reportValidity();
+      return;
+    }
+
+    message.text = updatedText;
+    message.edited = true;
+    renderChatList();
+    renderMessages(chat);
+  });
+
+  textarea.addEventListener("input", () => textarea.setCustomValidity(""));
+  textarea.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      renderMessages(chat);
+    }
+  });
+  cancelButton.addEventListener("click", () => renderMessages(chat));
+
+  actions.append(saveButton, cancelButton);
+  form.append(textarea, actions);
+  article.replaceChildren(form);
+  textarea.focus();
+  textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+}
+
+async function translateMessages(chat) {
+  const messagesToTranslate = chat.messages.filter(
+    (message) => message.sender === "contact" && !message.translatedText
+  );
+
+  if (messagesToTranslate.length === 0) {
+    showFeatureStatus("Немає нових повідомлень для перекладу.");
+    return;
+  }
+
+  showFeatureStatus("Перекладаю повідомлення...");
+  const failures = [];
+
+  for (const message of messagesToTranslate) {
+    try {
+      message.translatedText = await requestService(
+        serviceEndpoints.translate,
+        { text: message.text, targetLanguage: "uk" },
+        "translation"
+      );
+    } catch (error) {
+      failures.push(getErrorMessage(error));
+    }
+  }
+
+  if (activeChatId === chat.id) {
+    renderMessages(chat);
+  }
+
+  if (failures.length > 0) {
+    showFeatureStatus(failures[0]);
+    return;
+  }
+
+  showFeatureStatus("Переклад готовий.");
 }
 
 function selectChat(chatId) {
@@ -169,6 +344,10 @@ function selectChat(chatId) {
   conversationHeading.textContent = chat.name;
   renderChatList();
   renderMessages(chat);
+
+  if (autoTranslateInput.checked) {
+    translateMessages(chat);
+  }
 }
 
 chatSearchInput.addEventListener("input", (event) => {
@@ -199,6 +378,10 @@ messageForm.addEventListener("submit", (event) => {
   const now = new Date();
   const time = now.toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" });
   const chat = chats.find((item) => item.id === activeChatId);
+  if (!chat) {
+    return;
+  }
+
   chat.messages.push({
     sender: "you",
     text,
@@ -210,6 +393,132 @@ messageForm.addEventListener("submit", (event) => {
   renderChatList();
   renderMessages(chat);
   messageInput.focus();
+});
+
+improveMessageButton.addEventListener("click", async () => {
+  const text = messageInput.value.trim();
+
+  if (!text) {
+    showFeatureStatus("Спочатку введіть повідомлення для покращення.");
+    messageInput.focus();
+    return;
+  }
+
+  improveMessageButton.disabled = true;
+  showFeatureStatus("Готую покращений варіант...");
+
+  try {
+    messageInput.value = await requestService(
+      serviceEndpoints.improve,
+      { text, language: "uk" },
+      "suggestion"
+    );
+    showFeatureStatus("Перегляньте й за потреби відредагуйте запропонований текст.");
+  } catch (error) {
+    showFeatureStatus(getErrorMessage(error));
+  } finally {
+    improveMessageButton.disabled = false;
+  }
+});
+
+autoTranslateInput.addEventListener("change", () => {
+  if (!autoTranslateInput.checked) {
+    showFeatureStatus("");
+    return;
+  }
+
+  const chat = chats.find((item) => item.id === activeChatId);
+  if (chat) {
+    translateMessages(chat);
+  }
+});
+
+async function startVoiceRecording() {
+  if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+    showFeatureStatus("Запис голосу не підтримується цим браузером. Спробуйте HTTPS або localhost.");
+    return;
+  }
+
+  recordVoiceButton.disabled = true;
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const recorder = new MediaRecorder(stream);
+    const recordingChatId = activeChatId;
+    const audioChunks = [];
+
+    activeAudioStream = stream;
+    activeRecorder = recorder;
+    recorder.addEventListener("dataavailable", (event) => {
+      if (event.data.size > 0) {
+        audioChunks.push(event.data);
+      }
+    });
+    recorder.addEventListener("stop", () => {
+      stream.getTracks().forEach((track) => track.stop());
+      activeAudioStream = null;
+      activeRecorder = null;
+      recordVoiceButton.textContent = "Записати голос";
+      recordVoiceButton.disabled = false;
+
+      if (audioChunks.length === 0) {
+        showFeatureStatus("Не вдалося записати аудіо. Спробуйте ще раз.");
+        return;
+      }
+
+      const chat = chats.find((item) => item.id === recordingChatId);
+      if (!chat) {
+        showFeatureStatus("Чат для записаного повідомлення більше недоступний.");
+        return;
+      }
+
+      const now = new Date();
+      chat.messages.push({
+        sender: "you",
+        text: "Голосове повідомлення",
+        audioUrl: URL.createObjectURL(new Blob(audioChunks, { type: recorder.mimeType })),
+        time: now.toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" }),
+        datetime: now.toISOString(),
+      });
+
+      renderChatList();
+      if (activeChatId === chat.id) {
+        renderMessages(chat);
+      }
+      showFeatureStatus("Голосове повідомлення додано до чату.");
+    });
+
+    recorder.start();
+    recordVoiceButton.disabled = false;
+    recordVoiceButton.textContent = "Зупинити запис";
+    showFeatureStatus("Запис триває. Натисніть кнопку ще раз, щоб зупинити.");
+  } catch (error) {
+    activeAudioStream?.getTracks().forEach((track) => track.stop());
+    activeAudioStream = null;
+    activeRecorder = null;
+    recordVoiceButton.disabled = false;
+
+    if (error instanceof Error && error.name === "NotAllowedError") {
+      showFeatureStatus("Надайте браузеру дозвіл на використання мікрофона.");
+    } else if (error instanceof Error && error.name === "NotFoundError") {
+      showFeatureStatus("Мікрофон не знайдено.");
+    } else {
+      showFeatureStatus(getErrorMessage(error));
+    }
+  }
+}
+
+recordVoiceButton.addEventListener("click", () => {
+  if (activeRecorder?.state === "recording") {
+    activeRecorder.stop();
+    return;
+  }
+
+  startVoiceRecording();
+});
+
+messageInput.addEventListener("input", () => {
+  showFeatureStatus("");
 });
 
 selectChat(activeChatId);

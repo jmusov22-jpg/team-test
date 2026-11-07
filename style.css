@@ -306,13 +306,76 @@ input {
 }
 
 .message-form {
-  display: flex;
-  gap: 10px;
+  display: grid;
+  gap: 9px;
   padding: 18px 24px;
   border-top: 1px solid #edf0f5;
 }
 
-.message-form input {
+.message-options,
+.message-compose-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.message-options {
+  justify-content: space-between;
+}
+
+.auto-translate {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #64728a;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.auto-translate input {
+  accent-color: #5578d8;
+}
+
+.feature-status {
+  min-height: 0;
+  margin: 0;
+  color: #a44c3d;
+  font-size: 0.78rem;
+}
+
+.feature-status:empty {
+  display: none;
+}
+
+.tool-button,
+.message-edit-button,
+.message-action-button {
+  color: #52688e;
+  background: #edf2fb;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.tool-button {
+  min-height: 40px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.tool-button:hover,
+.message-edit-button:hover,
+.message-action-button:hover {
+  background: #e2eafa;
+}
+
+.message-compose-row {
+  min-width: 0;
+}
+
+.message-compose-row > input {
   min-width: 0;
   flex: 1;
   padding: 12px 15px;
@@ -322,11 +385,11 @@ input {
   border-radius: 11px;
 }
 
-.message-form input::placeholder {
+.message-compose-row > input::placeholder {
   color: #9aa4b3;
 }
 
-.message-form button {
+.message-compose-row > button[type="submit"] {
   padding: 0 19px;
   color: #fff;
   background: #5578d8;
@@ -338,8 +401,87 @@ input {
   transition: background-color 140ms ease;
 }
 
-.message-form button:hover {
+.message-form button:focus-visible,
+.tool-button:focus-visible,
+.message-edit-button:focus-visible,
+.message-action-button:focus-visible,
+.message-edit-input:focus-visible {
+  outline: 3px solid #9bb3f4;
+  outline-offset: 2px;
+}
+
+.message-compose-row > button[type="submit"]:hover {
   background: #4265c5;
+}
+
+.message-edit-button {
+  margin-top: 8px;
+  padding: 6px 9px;
+}
+
+.message-edit-form {
+  display: grid;
+  gap: 8px;
+  min-width: min(280px, 70vw);
+}
+
+.message-edit-input {
+  width: 100%;
+  min-height: 72px;
+  padding: 9px;
+  color: #202b3c;
+  background: #fff;
+  border: 1px solid #d5deef;
+  border-radius: 8px;
+  font: inherit;
+  resize: vertical;
+}
+
+.message-edit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.message-action-button {
+  padding: 7px 10px;
+}
+
+.message-you .message-action-button {
+  color: #fff;
+  background: rgb(255 255 255 / 18%);
+}
+
+.message-you .message-action-button:hover {
+  background: rgb(255 255 255 / 28%);
+}
+
+.message-translation {
+  margin: 8px 0 0;
+  padding-top: 7px;
+  color: #52688e;
+  border-top: 1px solid rgb(82 104 142 / 18%);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.message-you .message-translation {
+  color: #e5ebff;
+  border-top-color: rgb(255 255 255 / 30%);
+}
+
+.message-translation-label {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.message-audio {
+  display: block;
+  width: min(280px, 62vw);
+  max-width: 100%;
+  height: 40px;
 }
 
 .visually-hidden {
@@ -416,14 +558,19 @@ input {
     padding: 12px;
   }
 
-  .message-form input {
+  .message-compose-row > input {
     padding: 10px;
     font-size: 0.8rem;
   }
 
-  .message-form button {
+  .message-compose-row > button[type="submit"] {
     padding: 0 11px;
     font-size: 0.75rem;
+  }
+
+  .message-compose-row > .tool-button {
+    padding: 0 9px;
+    font-size: 0.72rem;
   }
 }
 
@@ -497,13 +644,38 @@ input {
     font-size: 0.72rem;
   }
 
-  .message-form input,
-  .message-form button {
+  .message-compose-row > input,
+  .message-compose-row > button[type="submit"],
+  .message-compose-row > .tool-button {
     min-height: 44px;
   }
 
-  .message-form button {
+  .message-compose-row > button[type="submit"] {
     padding: 0 12px;
+  }
+
+  .message-options {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .message-compose-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .message-compose-row input {
+    grid-column: 1 / -1;
+  }
+
+  .message-compose-row > .tool-button {
+    padding: 0 9px;
+    font-size: 0.7rem;
+  }
+
+  .message-compose-row > button[type="submit"] {
+    font-size: 0.75rem;
   }
 }
 
@@ -525,7 +697,7 @@ input {
     padding: 10px;
   }
 
-  .message-form input {
+  .message-compose-row > input {
     padding-inline: 10px;
   }
 

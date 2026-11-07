@@ -37,9 +37,20 @@
         <ol class="messages" id="messages" aria-label="Повідомлення" aria-live="polite"></ol>
 
         <form class="message-form" id="message-form">
+          <div class="message-options">
+            <label class="auto-translate" for="auto-translate">
+              <input id="auto-translate" type="checkbox">
+              Автопереклад українською
+            </label>
+            <button class="tool-button" id="improve-message" type="button">Покращити за допомогою ШІ</button>
+          </div>
+          <p class="feature-status" id="feature-status" role="status" aria-live="polite"></p>
           <label class="visually-hidden" for="message">Повідомлення</label>
-          <input id="message" name="message" type="text" placeholder="Напишіть повідомлення..." autocomplete="off" required>
-          <button type="submit">Надіслати</button>
+          <div class="message-compose-row">
+            <input id="message" name="message" type="text" placeholder="Напишіть повідомлення..." autocomplete="off" required>
+            <button class="tool-button" id="record-voice" type="button">Записати голос</button>
+            <button type="submit">Надіслати</button>
+          </div>
         </form>
       </section>
     </main>
