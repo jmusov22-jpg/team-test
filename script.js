@@ -83,6 +83,13 @@ const groupForm = document.querySelector("#group-form");
 const groupNameInput = document.querySelector("#group-name");
 const groupMembersSelect = document.querySelector("#group-members");
 const cancelGroupButton = document.querySelector("#cancel-group");
+const groupMembersButton = document.querySelector("#group-members-button");
+const groupMembersPanel = document.querySelector("#group-members-panel");
+const groupMemberList = document.querySelector("#group-member-list");
+const editGroupMembersButton = document.querySelector("#edit-group-members");
+const groupEditForm = document.querySelector("#group-edit-form");
+const groupEditMembersSelect = document.querySelector("#group-edit-members");
+const cancelGroupEditButton = document.querySelector("#cancel-group-edit");
 const profileToggle = document.querySelector("#profile-toggle");
 const profileForm = document.querySelector("#profile-form");
 const profileNameInput = document.querySelector("#profile-name");
@@ -417,15 +424,53 @@ function getChatStatus(chat) {
   return `${chat.members.length} учасники · ${onlineMembers} онлайн`;
 }
 
-function populateGroupMembers() {
-  groupMembersSelect.replaceChildren();
+function populateMemberSelect(select, selectedMemberIds = []) {
+  select.replaceChildren();
 
   chats.filter((chat) => !chat.isGroup).forEach((chat) => {
     const option = document.createElement("option");
     option.value = chat.id;
     option.textContent = `${chat.name} (${statusLabels[chat.status]})`;
-    groupMembersSelect.append(option);
+    option.selected = selectedMemberIds.includes(chat.id);
+    select.append(option);
   });
+}
+
+function populateGroupMembers() {
+  populateMemberSelect(groupMembersSelect);
+}
+
+function renderGroupMembers(chat) {
+  groupMemberList.replaceChildren();
+
+  chat.members.forEach((member) => {
+    const item = document.createElement("li");
+    const avatar = document.createElement("span");
+    const name = document.createElement("span");
+    const status = document.createElement("span");
+
+    item.className = "group-member";
+    avatar.className = `avatar avatar-${member.color || "blue"}`;
+    avatar.textContent = member.initials || member.name.slice(0, 2).toUpperCase();
+    avatar.setAttribute("aria-hidden", "true");
+    name.className = "group-member-name";
+    name.textContent = member.name;
+    status.className = `group-member-status status-text-${member.status || "offline"}`;
+    status.textContent = statusLabels[member.status] || statusLabels.offline;
+    item.append(avatar, name, status);
+    groupMemberList.append(item);
+  });
+}
+
+function openGroupMembersPanel(chat) {
+  groupMembersPanel.hidden = false;
+  groupEditForm.hidden = true;
+  renderGroupMembers(chat);
+}
+
+function openGroupMembersEditor(chat) {
+  populateMemberSelect(groupEditMembersSelect, chat.members.map((member) => member.id));
+  groupEditForm.hidden = false;
 }
 
 function renderChatList() {
@@ -671,6 +716,10 @@ function selectChat(chatId, shouldPersist = true) {
   conversationHeading.textContent = chat.name;
   conversationStatus.textContent = getChatStatus(chat);
   conversationStatus.className = `conversation-status status-text-${chat.isGroup ? "group" : chat.status}`;
+  groupMembersButton.hidden = !chat.isGroup;
+  groupMembersButton.setAttribute("aria-expanded", "false");
+  groupMembersPanel.hidden = true;
+  groupEditForm.hidden = true;
   renderChatList();
   renderMessages(chat);
 
@@ -731,6 +780,55 @@ createGroupButton.addEventListener("click", () => {
   groupForm.hidden = false;
   createGroupButton.hidden = true;
   groupNameInput.focus();
+});
+
+groupMembersButton.addEventListener("click", () => {
+  const chat = chats.find((item) => item.id === activeChatId);
+  if (!chat?.isGroup) {
+    return;
+  }
+
+  const isOpening = groupMembersPanel.hidden;
+  groupMembersPanel.hidden = !isOpening;
+  groupMembersButton.setAttribute("aria-expanded", String(isOpening));
+  if (isOpening) {
+    openGroupMembersPanel(chat);
+  }
+});
+
+editGroupMembersButton.addEventListener("click", () => {
+  const chat = chats.find((item) => item.id === activeChatId);
+  if (chat?.isGroup) {
+    openGroupMembersEditor(chat);
+  }
+});
+
+cancelGroupEditButton.addEventListener("click", () => {
+  groupEditForm.hidden = true;
+});
+
+groupEditForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const chat = chats.find((item) => item.id === activeChatId);
+  const memberIds = [...groupEditMembersSelect.selectedOptions].map((option) => option.value);
+
+  if (!chat?.isGroup || memberIds.length === 0) {
+    showFeatureStatus("Оберіть хоча б одного учасника групи.");
+    return;
+  }
+
+  chat.members = chats
+    .filter((item) => !item.isGroup && memberIds.includes(item.id))
+    .map(({ id, name, initials, color, status }) => ({ id, name, initials, color, status }));
+
+  const stateSaved = persistState();
+  groupEditForm.hidden = true;
+  renderGroupMembers(chat);
+  conversationStatus.textContent = getChatStatus(chat);
+  renderChatList();
+  if (stateSaved) {
+    showFeatureStatus("Склад групи збережено.");
+  }
 });
 
 cancelGroupButton.addEventListener("click", () => {

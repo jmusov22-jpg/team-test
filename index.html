@@ -94,7 +94,23 @@
             <h2 id="conversation-heading"></h2>
             <p id="conversation-status"></p>
           </div>
+          <button class="tool-button group-members-button" id="group-members-button" type="button" aria-expanded="false" aria-controls="group-members-panel" hidden>Учасники</button>
         </header>
+        <section class="group-members-panel" id="group-members-panel" aria-label="Учасники групи" hidden>
+          <div class="group-members-heading">
+            <h3>Склад групи</h3>
+            <button class="tool-button" id="edit-group-members" type="button">Змінити склад</button>
+          </div>
+          <ul class="group-member-list" id="group-member-list"></ul>
+          <form class="group-form group-edit-form" id="group-edit-form" hidden>
+            <label for="group-edit-members">Оберіть учасників</label>
+            <select id="group-edit-members" name="group-edit-members" multiple required></select>
+            <div class="group-form-actions">
+              <button class="tool-button" id="cancel-group-edit" type="button">Скасувати</button>
+              <button class="create-group-submit" type="submit">Зберегти склад</button>
+            </div>
+          </form>
+        </section>
 
         <ol class="messages" id="messages" aria-label="Повідомлення" aria-live="polite"></ol>
 
