@@ -116,10 +116,9 @@ const stickers = [
   "💚", "💙", "💜", "🖤", "💖", "💯", "🔥", "✨", "🎉", "🎂", "🌟", "🌈",
   "🍕", "☕", "🐱", "🐶", "🌸", "🚀", "🎁", "💐",
 ];
-// Configure same-origin routes returning { suggestion } / { translation }; keep API keys on the server.
 const serviceEndpoints = {
-  improve: null,
-  translate: null,
+  improve: "/api/improve",
+  translate: "/api/translate",
 };
 let chats = JSON.parse(JSON.stringify(defaultChats));
 let profile = {
@@ -238,8 +237,10 @@ function blobToDataUrl(blob) {
   });
 }
 
-function showFeatureStatus(message) {
+function showFeatureStatus(message, isLoading = false) {
   featureStatus.textContent = message;
+  featureStatus.setAttribute("aria-busy", String(isLoading));
+  featureStatus.classList.toggle("is-loading", isLoading);
 }
 
 function closeStickerPicker() {
@@ -307,11 +308,19 @@ async function requestService(endpoint, payload, resultField) {
     throw new Error("Не вдалося з'єднатися із сервісом. Перевірте сервер і повторіть спробу.");
   }
 
-  if (!response.ok) {
-    throw new Error(`Сервіс повернув помилку (${response.status}).`);
+  let result;
+  try {
+    result = await response.json();
+  } catch {
+    throw new Error("Сервіс повернув некоректну відповідь. Спробуйте ще раз.");
   }
 
-  const result = await response.json();
+  if (!response.ok) {
+    const message = result && typeof result.error === "string"
+      ? result.error
+      : `Сервіс повернув помилку (${response.status}).`;
+    throw new Error(message);
+  }
 
   if (!result || typeof result[resultField] !== "string" || !result[resultField].trim()) {
     throw new Error("Сервіс повернув відповідь у неочікуваному форматі.");
@@ -670,7 +679,7 @@ async function translateMessages(chat) {
     return;
   }
 
-  showFeatureStatus("Перекладаю повідомлення...");
+  showFeatureStatus("Перекладаю повідомлення...", true);
   const failures = [];
 
   for (const message of messagesToTranslate) {
@@ -999,14 +1008,15 @@ improveMessageButton.addEventListener("click", async () => {
   }
 
   improveMessageButton.disabled = true;
-  showFeatureStatus("Готую покращений варіант...");
+  showFeatureStatus("Готую покращений варіант...", true);
 
   try {
-    messageInput.value = await requestService(
+    const improvedText = await requestService(
       serviceEndpoints.improve,
       { text, language: "uk" },
       "suggestion"
     );
+    messageInput.value = improvedText;
     resizeMessageInput();
     showFeatureStatus("Перегляньте й за потреби відредагуйте запропонований текст.");
   } catch (error) {

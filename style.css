@@ -616,6 +616,10 @@ input {
   font-size: 0.78rem;
 }
 
+.feature-status.is-loading {
+  color: #52688e;
+}
+
 .feature-status:empty {
   display: none;
 }
