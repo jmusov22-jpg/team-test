@@ -492,7 +492,16 @@ input {
   min-width: 0;
 }
 
-.message-compose-row > input {
+.message-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 7px;
+}
+
+.message-input-wrap > input {
   min-width: 0;
   flex: 1;
   padding: 12px 15px;
@@ -502,8 +511,72 @@ input {
   border-radius: 11px;
 }
 
-.message-compose-row > input::placeholder {
+.message-input-wrap > input::placeholder {
   color: #9aa4b3;
+}
+
+.sticker-toggle {
+  display: grid;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  place-items: center;
+  color: #52688e;
+  background: #edf2fb;
+  border: 0;
+  border-radius: 11px;
+  cursor: pointer;
+  font-size: 1.25rem;
+}
+
+.sticker-toggle:hover,
+.sticker-option:hover {
+  background: #e2eafa;
+}
+
+.sticker-picker {
+  position: absolute;
+  z-index: 20;
+  bottom: calc(100% + 10px);
+  left: 0;
+  display: grid;
+  width: min(320px, calc(100vw - 32px));
+  max-height: min(320px, calc(100vh - 40px));
+  gap: 9px;
+  overflow-y: auto;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #e5eaf2;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgb(34 53 89 / 18%);
+}
+
+.sticker-picker[hidden] {
+  display: none;
+}
+
+.sticker-picker-title {
+  margin: 0;
+  color: #52688e;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.sticker-option {
+  min-width: 0;
+  min-height: 40px;
+  padding: 2px;
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 1.35rem;
 }
 
 .message-compose-row > button[type="submit"] {
@@ -675,7 +748,7 @@ input {
     padding: 12px;
   }
 
-  .message-compose-row > input {
+  .message-input-wrap > input {
     padding: 10px;
     font-size: 0.8rem;
   }
@@ -761,9 +834,10 @@ input {
     font-size: 0.72rem;
   }
 
-  .message-compose-row > input,
+  .message-input-wrap > input,
   .message-compose-row > button[type="submit"],
-  .message-compose-row > .tool-button {
+  .message-compose-row > .tool-button,
+  .sticker-toggle {
     min-height: 44px;
   }
 
@@ -782,7 +856,7 @@ input {
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
-  .message-compose-row input {
+  .message-input-wrap {
     grid-column: 1 / -1;
   }
 
@@ -814,7 +888,7 @@ input {
     padding: 10px;
   }
 
-  .message-compose-row > input {
+  .message-input-wrap > input {
     padding-inline: 10px;
   }
 

@@ -58,7 +58,14 @@
           <p class="feature-status" id="feature-status" role="status" aria-live="polite"></p>
           <label class="visually-hidden" for="message">Повідомлення</label>
           <div class="message-compose-row">
-            <input id="message" name="message" type="text" placeholder="Напишіть повідомлення..." autocomplete="off" required>
+            <div class="message-input-wrap">
+              <input id="message" name="message" type="text" placeholder="Напишіть повідомлення..." autocomplete="off" required>
+              <button class="sticker-toggle" id="sticker-toggle" type="button" aria-label="Відкрити стікери" aria-haspopup="true" aria-expanded="false" aria-controls="sticker-picker">😊</button>
+              <div class="sticker-picker" id="sticker-picker" role="group" aria-label="Вибір стікера" hidden>
+                <p class="sticker-picker-title">Оберіть стікер</p>
+                <div class="sticker-grid" id="sticker-grid"></div>
+              </div>
+            </div>
             <button class="tool-button" id="record-voice" type="button">Записати голос</button>
             <button type="submit">Надіслати</button>
           </div>

@@ -69,6 +69,9 @@ const conversationStatus = document.querySelector("#conversation-status");
 const messagesList = document.querySelector("#messages");
 const messageForm = document.querySelector("#message-form");
 const messageInput = document.querySelector("#message");
+const stickerToggle = document.querySelector("#sticker-toggle");
+const stickerPicker = document.querySelector("#sticker-picker");
+const stickerGrid = document.querySelector("#sticker-grid");
 const chatSearchInput = document.querySelector("#chat-search");
 const autoTranslateInput = document.querySelector("#auto-translate");
 const improveMessageButton = document.querySelector("#improve-message");
@@ -79,6 +82,13 @@ const groupForm = document.querySelector("#group-form");
 const groupNameInput = document.querySelector("#group-name");
 const groupMembersSelect = document.querySelector("#group-members");
 const cancelGroupButton = document.querySelector("#cancel-group");
+const stickers = [
+  "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🙂", "🙃", "😉", "😊", "😍",
+  "🥰", "😘", "😎", "🤩", "🥳", "🤗", "🤔", "😴", "😭", "😡", "🤯", "😱",
+  "🥺", "👍", "👎", "👏", "🙌", "🤝", "💪", "👋", "🙏", "❤️", "🧡", "💛",
+  "💚", "💙", "💜", "🖤", "💖", "💯", "🔥", "✨", "🎉", "🎂", "🌟", "🌈",
+  "🍕", "☕", "🐱", "🐶", "🌸", "🚀", "🎁", "💐",
+];
 // Configure same-origin routes returning { suggestion } / { translation }; keep API keys on the server.
 const serviceEndpoints = {
   improve: null,
@@ -98,6 +108,54 @@ const statusLabels = {
 function showFeatureStatus(message) {
   featureStatus.textContent = message;
 }
+
+function closeStickerPicker() {
+  stickerPicker.hidden = true;
+  stickerToggle.setAttribute("aria-expanded", "false");
+}
+
+function insertSticker(sticker) {
+  const start = messageInput.selectionStart ?? messageInput.value.length;
+  const end = messageInput.selectionEnd ?? start;
+
+  messageInput.setRangeText(sticker, start, end, "end");
+  closeStickerPicker();
+  messageInput.dispatchEvent(new Event("input", { bubbles: true }));
+  messageInput.focus();
+}
+
+stickers.forEach((sticker, index) => {
+  const button = document.createElement("button");
+  button.className = "sticker-option";
+  button.type = "button";
+  button.textContent = sticker;
+  button.setAttribute("aria-label", `Додати стікер ${index + 1}: ${sticker}`);
+  button.addEventListener("click", () => insertSticker(sticker));
+  stickerGrid.append(button);
+});
+
+stickerToggle.addEventListener("click", () => {
+  const isOpening = stickerPicker.hidden;
+  stickerPicker.hidden = !isOpening;
+  stickerToggle.setAttribute("aria-expanded", String(isOpening));
+
+  if (isOpening) {
+    stickerGrid.querySelector("button")?.focus();
+  }
+});
+
+document.addEventListener("click", (event) => {
+  if (!stickerPicker.hidden && !stickerPicker.contains(event.target) && !stickerToggle.contains(event.target)) {
+    closeStickerPicker();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !stickerPicker.hidden) {
+    closeStickerPicker();
+    stickerToggle.focus();
+  }
+});
 
 async function requestService(endpoint, payload, resultField) {
   if (!endpoint) {
