@@ -1,4 +1,4 @@
-const chats = [
+const defaultChats = [
   {
     id: "olena",
     name: "Олена Мельник",
@@ -82,6 +82,25 @@ const groupForm = document.querySelector("#group-form");
 const groupNameInput = document.querySelector("#group-name");
 const groupMembersSelect = document.querySelector("#group-members");
 const cancelGroupButton = document.querySelector("#cancel-group");
+const profileToggle = document.querySelector("#profile-toggle");
+const profileForm = document.querySelector("#profile-form");
+const profileNameInput = document.querySelector("#profile-name");
+const profilePhoneInput = document.querySelector("#profile-phone");
+const profileEmailInput = document.querySelector("#profile-email");
+const profileAvatarInput = document.querySelector("#profile-avatar");
+const profileColorInput = document.querySelector("#profile-color");
+const profileCodeInput = document.querySelector("#profile-code");
+const profilePreviewAvatar = document.querySelector("#profile-preview-avatar");
+const profilePreviewName = document.querySelector("#profile-preview-name");
+const generateCodeButton = document.querySelector("#generate-code");
+const addContactButton = document.querySelector("#add-contact-button");
+const contactForm = document.querySelector("#contact-form");
+const contactNameInput = document.querySelector("#contact-name");
+const contactPhoneInput = document.querySelector("#contact-phone");
+const contactEmailInput = document.querySelector("#contact-email");
+const contactCodeInput = document.querySelector("#contact-code");
+const cancelContactButton = document.querySelector("#cancel-contact");
+const storageKey = "teamchat-state-v1";
 const stickers = [
   "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🙂", "🙃", "😉", "😊", "😍",
   "🥰", "😘", "😎", "🤩", "🥳", "🤗", "🤔", "😴", "😭", "😡", "🤯", "😱",
@@ -94,6 +113,15 @@ const serviceEndpoints = {
   improve: null,
   translate: null,
 };
+let chats = JSON.parse(JSON.stringify(defaultChats));
+let profile = {
+  name: "Мій профіль",
+  phone: "",
+  email: "",
+  avatar: "В",
+  color: "blue",
+  code: "",
+};
 let activeChatId = chats[0].id;
 let searchQuery = "";
 let activeRecorder = null;
@@ -104,6 +132,103 @@ const statusLabels = {
   busy: "не турбувати",
   offline: "офлайн",
 };
+
+function isValidSavedState(state) {
+  return state
+    && Array.isArray(state.chats)
+    && state.chats.length > 0
+    && state.chats.every((chat) => (
+      chat
+      && typeof chat.id === "string"
+      && typeof chat.name === "string"
+      && Array.isArray(chat.messages)
+      && chat.messages.every((message) => (
+        message
+        && typeof message.text === "string"
+        && (message.sender === "you" || message.sender === "contact")
+      ))
+    ))
+    && state.profile
+    && typeof state.profile.name === "string";
+}
+
+function restoreSavedState() {
+  try {
+    const savedState = localStorage.getItem(storageKey);
+
+    if (!savedState) {
+      return;
+    }
+
+    const state = JSON.parse(savedState);
+    if (!isValidSavedState(state)) {
+      throw new Error("Збережені дані чату мають неочікуваний формат.");
+    }
+
+    chats = state.chats;
+    profile = { ...profile, ...state.profile };
+    activeChatId = chats.some((chat) => chat.id === state.activeChatId)
+      ? state.activeChatId
+      : chats[0].id;
+  } catch (error) {
+    showFeatureStatus(`Не вдалося відновити збережені дані: ${getErrorMessage(error)}`);
+  }
+}
+
+function persistState() {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify({ chats, profile, activeChatId }));
+    return true;
+  } catch (error) {
+    showFeatureStatus(`Не вдалося зберегти зміни: ${getErrorMessage(error)}`);
+    return false;
+  }
+}
+
+function generateSecretCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const randomValues = new Uint8Array(10);
+
+  if (!globalThis.crypto?.getRandomValues) {
+    throw new Error("Генератор секретного коду недоступний у цьому браузері.");
+  }
+
+  globalThis.crypto.getRandomValues(randomValues);
+  return Array.from(randomValues, (value) => alphabet[value % alphabet.length]).join("");
+}
+
+function updateProfilePreview() {
+  const name = profileNameInput.value.trim() || "Мій профіль";
+  profilePreviewAvatar.className = `avatar avatar-${profileColorInput.value}`;
+  profilePreviewAvatar.textContent = profileAvatarInput.value.trim() || name.slice(0, 2).toUpperCase();
+  profilePreviewName.textContent = name;
+}
+
+function populateProfileForm() {
+  profileNameInput.value = profile.name;
+  profilePhoneInput.value = profile.phone;
+  profileEmailInput.value = profile.email;
+  profileAvatarInput.value = profile.avatar;
+  profileColorInput.value = profile.color;
+  profileCodeInput.value = profile.code;
+  profileToggle.textContent = profile.name === "Мій профіль" ? "Мій профіль" : `Мій профіль · ${profile.name}`;
+  updateProfilePreview();
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+      } else {
+        reject(new Error("Не вдалося підготувати аудіо до збереження."));
+      }
+    });
+    reader.addEventListener("error", () => reject(new Error("Не вдалося прочитати аудіоповідомлення.")));
+    reader.readAsDataURL(blob);
+  });
+}
 
 function showFeatureStatus(message) {
   featureStatus.textContent = message;
@@ -255,7 +380,7 @@ function renderChatList() {
 
     avatar.className = `avatar avatar-${chat.color}`;
     avatar.setAttribute("aria-hidden", "true");
-    avatar.textContent = chat.initials;
+    avatar.textContent = chat.avatar || chat.initials;
     status.className = `user-status status-${chat.isGroup ? "group" : chat.status}`;
     status.setAttribute("aria-label", getChatStatus(chat));
     status.title = getChatStatus(chat);
@@ -264,10 +389,10 @@ function renderChatList() {
     name.className = "chat-name";
     name.textContent = chat.name;
     preview.className = "chat-preview";
-    preview.textContent = lastMessage.text;
+    preview.textContent = lastMessage?.text || "Почніть розмову";
     time.className = "chat-time";
-    time.dateTime = lastMessage.datetime;
-    time.textContent = lastMessage.time;
+    time.dateTime = lastMessage?.datetime || "";
+    time.textContent = lastMessage?.time || "";
 
     details.append(name, preview);
     avatar.append(status);
@@ -375,6 +500,7 @@ function openMessageEditor(chat, message, article) {
 
     message.text = updatedText;
     message.edited = true;
+    persistState();
     renderChatList();
     renderMessages(chat);
   });
@@ -419,6 +545,7 @@ async function translateMessages(chat) {
     }
   }
 
+  const stateSaved = persistState();
   if (activeChatId === chat.id) {
     renderMessages(chat);
   }
@@ -428,10 +555,12 @@ async function translateMessages(chat) {
     return;
   }
 
-  showFeatureStatus("Переклад готовий.");
+  if (stateSaved) {
+    showFeatureStatus("Переклад готовий.");
+  }
 }
 
-function selectChat(chatId) {
+function selectChat(chatId, shouldPersist = true) {
   const chat = chats.find((item) => item.id === chatId);
 
   if (!chat) {
@@ -439,8 +568,11 @@ function selectChat(chatId) {
   }
 
   activeChatId = chatId;
+  if (shouldPersist) {
+    persistState();
+  }
   conversationAvatar.className = `avatar avatar-${chat.color}`;
-  conversationAvatar.textContent = chat.initials;
+  conversationAvatar.textContent = chat.avatar || chat.initials;
   conversationHeading.textContent = chat.name;
   conversationStatus.textContent = getChatStatus(chat);
   conversationStatus.className = `conversation-status status-text-${chat.isGroup ? "group" : chat.status}`;
@@ -490,59 +622,176 @@ messageForm.addEventListener("submit", (event) => {
     time,
     datetime: now.toISOString(),
   });
-
-  createGroupButton.addEventListener("click", () => {
-    populateGroupMembers();
-    groupForm.hidden = false;
-    createGroupButton.hidden = true;
-    groupNameInput.focus();
-  });
-
-  cancelGroupButton.addEventListener("click", () => {
-    groupForm.reset();
-    groupForm.hidden = true;
-    createGroupButton.hidden = false;
-  });
-
-  groupForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const name = groupNameInput.value.trim();
-    const memberIds = [...groupMembersSelect.selectedOptions].map((option) => option.value);
-
-    if (!name || memberIds.length === 0) {
-      return;
-    }
-
-    const members = chats.filter((chat) => memberIds.includes(chat.id));
-    const group = {
-      id: `group-${Date.now()}`,
-      name,
-      initials: name.slice(0, 2).toUpperCase(),
-      color: "blue",
-      isGroup: true,
-      members,
-      messages: [
-        {
-          sender: "contact",
-          author: "Система",
-          text: `Групу створено. Учасники: ${members.map((member) => member.name).join(", ")}.`,
-          time: new Date().toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" }),
-          datetime: new Date().toISOString(),
-        },
-      ],
-    };
-
-    chats.push(group);
-    groupForm.reset();
-    groupForm.hidden = true;
-    createGroupButton.hidden = false;
-    selectChat(group.id);
-  });
-
+  persistState();
   messageInput.value = "";
   renderChatList();
   renderMessages(chat);
   messageInput.focus();
+});
+
+createGroupButton.addEventListener("click", () => {
+  populateGroupMembers();
+  groupForm.hidden = false;
+  createGroupButton.hidden = true;
+  groupNameInput.focus();
+});
+
+cancelGroupButton.addEventListener("click", () => {
+  groupForm.reset();
+  groupForm.hidden = true;
+  createGroupButton.hidden = false;
+});
+
+groupForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const name = groupNameInput.value.trim();
+  const memberIds = [...groupMembersSelect.selectedOptions].map((option) => option.value);
+
+  if (!name || memberIds.length === 0) {
+    return;
+  }
+
+  const members = chats
+    .filter((chat) => memberIds.includes(chat.id))
+    .map(({ id, name: memberName, status }) => ({ id, name: memberName, status }));
+  const now = new Date();
+  const group = {
+    id: `group-${Date.now()}`,
+    name,
+    initials: name.slice(0, 2).toUpperCase(),
+    color: "blue",
+    isGroup: true,
+    members,
+    messages: [
+      {
+        sender: "contact",
+        author: "Система",
+        text: `Групу створено. Учасники: ${members.map((member) => member.name).join(", ")}.`,
+        time: now.toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" }),
+        datetime: now.toISOString(),
+      },
+    ],
+  };
+
+  chats.push(group);
+  persistState();
+  groupForm.reset();
+  groupForm.hidden = true;
+  createGroupButton.hidden = false;
+  selectChat(group.id);
+});
+
+profileToggle.addEventListener("click", () => {
+  profileForm.hidden = !profileForm.hidden;
+  contactForm.hidden = true;
+  if (!profileForm.hidden) {
+    profileNameInput.focus();
+  }
+});
+
+profileForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  profile = {
+    ...profile,
+    name: profileNameInput.value.trim(),
+    phone: profilePhoneInput.value.trim(),
+    email: profileEmailInput.value.trim(),
+    avatar: profileAvatarInput.value.trim(),
+    color: profileColorInput.value,
+    code: profileCodeInput.value.trim(),
+  };
+
+  if (!profile.code) {
+    try {
+      profile.code = generateSecretCode();
+    } catch (error) {
+      showFeatureStatus(getErrorMessage(error));
+      return;
+    }
+  }
+
+  profileCodeInput.value = profile.code;
+  profileToggle.textContent = `Мій профіль · ${profile.name}`;
+  const stateSaved = persistState();
+  profileForm.hidden = true;
+  if (stateSaved) {
+    showFeatureStatus(`Профіль збережено. Ваш секретний код: ${profile.code}`);
+  }
+});
+
+generateCodeButton.addEventListener("click", () => {
+  try {
+    profileCodeInput.value = generateSecretCode();
+  } catch (error) {
+    showFeatureStatus(getErrorMessage(error));
+  }
+});
+
+addContactButton.addEventListener("click", () => {
+  contactForm.hidden = !contactForm.hidden;
+  profileForm.hidden = true;
+  if (!contactForm.hidden) {
+    contactNameInput.focus();
+  }
+});
+
+cancelContactButton.addEventListener("click", () => {
+  contactForm.reset();
+  contactForm.hidden = true;
+});
+
+contactForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const name = contactNameInput.value.trim();
+  const phone = contactPhoneInput.value.trim();
+  const email = contactEmailInput.value.trim().toLowerCase();
+  const code = contactCodeInput.value.trim().toUpperCase();
+
+  if (!phone && !email && !code) {
+    showFeatureStatus("Укажіть номер телефону, імейл або секретний код контакту.");
+    return;
+  }
+
+  const normalizePhone = (value) => value.replace(/\D/g, "");
+  const duplicate = chats.find((chat) => !chat.isGroup && (
+    (phone && chat.phone && normalizePhone(phone) === normalizePhone(chat.phone))
+    || (email && chat.email?.toLowerCase() === email)
+    || (code && chat.code?.toUpperCase() === code)
+  ));
+  if (duplicate) {
+    showFeatureStatus(`${duplicate.name} уже є у списку контактів.`);
+    return;
+  }
+
+  const now = new Date();
+  const colors = ["coral", "blue", "purple", "green", "gold"];
+  const contact = {
+    id: `contact-${Date.now()}`,
+    name,
+    initials: name.slice(0, 2).toUpperCase(),
+    phone,
+    email,
+    code,
+    color: colors[chats.filter((chat) => !chat.isGroup).length % colors.length],
+    status: "offline",
+    messages: [{
+      sender: "contact",
+      author: "Система",
+      text: "Контакт додано. Напишіть перше повідомлення.",
+      time: now.toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" }),
+      datetime: now.toISOString(),
+    }],
+  };
+
+  chats.push(contact);
+  const stateSaved = persistState();
+  contactForm.reset();
+  contactForm.hidden = true;
+  renderChatList();
+  selectChat(contact.id);
+  if (stateSaved) {
+    showFeatureStatus("Контакт додано.");
+  }
 });
 
 improveMessageButton.addEventListener("click", async () => {
@@ -604,7 +853,7 @@ async function startVoiceRecording() {
         audioChunks.push(event.data);
       }
     });
-    recorder.addEventListener("stop", () => {
+    recorder.addEventListener("stop", async () => {
       stream.getTracks().forEach((track) => track.stop());
       activeAudioStream = null;
       activeRecorder = null;
@@ -622,11 +871,19 @@ async function startVoiceRecording() {
         return;
       }
 
+      let audioUrl;
+      try {
+        audioUrl = await blobToDataUrl(new Blob(audioChunks, { type: recorder.mimeType }));
+      } catch (error) {
+        showFeatureStatus(getErrorMessage(error));
+        return;
+      }
+
       const now = new Date();
       chat.messages.push({
         sender: "you",
         text: "Голосове повідомлення",
-        audioUrl: URL.createObjectURL(new Blob(audioChunks, { type: recorder.mimeType })),
+        audioUrl,
         time: now.toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" }),
         datetime: now.toISOString(),
       });
@@ -635,7 +892,9 @@ async function startVoiceRecording() {
       if (activeChatId === chat.id) {
         renderMessages(chat);
       }
-      showFeatureStatus("Голосове повідомлення додано до чату.");
+      if (persistState()) {
+        showFeatureStatus("Голосове повідомлення додано до чату.");
+      }
     });
 
     recorder.start();
@@ -671,4 +930,10 @@ messageInput.addEventListener("input", () => {
   showFeatureStatus("");
 });
 
-selectChat(activeChatId);
+profileNameInput.addEventListener("input", updateProfilePreview);
+profileAvatarInput.addEventListener("input", updateProfilePreview);
+profileColorInput.addEventListener("change", updateProfilePreview);
+
+restoreSavedState();
+populateProfileForm();
+selectChat(activeChatId, false);

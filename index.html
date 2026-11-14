@@ -18,6 +18,56 @@
           <h2 id="chats-heading">Чати</h2>
           <span class="chat-count" id="chat-count" aria-label="Кількість чатів"></span>
         </div>
+        <section class="account-section" aria-label="Профіль і контакти">
+          <button class="create-group-button" id="profile-toggle" type="button">Мій профіль</button>
+          <form class="account-form" id="profile-form" hidden>
+            <h3>Профіль</h3>
+            <div class="profile-preview">
+              <span class="avatar avatar-blue" id="profile-preview-avatar" aria-hidden="true">В</span>
+              <span id="profile-preview-name">Мій профіль</span>
+            </div>
+            <label for="profile-name">Ім’я</label>
+            <input id="profile-name" type="text" maxlength="40" required>
+            <label for="profile-phone">Номер телефону</label>
+            <input id="profile-phone" type="tel" autocomplete="tel">
+            <label for="profile-email">Імейл</label>
+            <input id="profile-email" type="email" autocomplete="email">
+            <label for="profile-avatar">Аватар (емодзі або ініціали)</label>
+            <input id="profile-avatar" type="text" maxlength="4" required>
+            <label for="profile-color">Колір</label>
+            <select id="profile-color">
+              <option value="blue">Синій</option>
+              <option value="coral">Кораловий</option>
+              <option value="purple">Фіолетовий</option>
+              <option value="green">Зелений</option>
+              <option value="gold">Золотий</option>
+            </select>
+            <label for="profile-code">Секретний код</label>
+            <div class="code-row">
+              <input id="profile-code" type="text" readonly aria-label="Ваш секретний код">
+              <button class="tool-button" id="generate-code" type="button">Створити</button>
+            </div>
+            <button class="create-group-submit" type="submit">Зберегти профіль</button>
+          </form>
+
+          <button class="create-group-button" id="add-contact-button" type="button">+ Додати контакт</button>
+          <form class="account-form" id="contact-form" hidden>
+            <h3>Новий контакт</h3>
+            <label for="contact-name">Ім’я контакту</label>
+            <input id="contact-name" type="text" maxlength="40" required>
+            <label for="contact-phone">Номер телефону</label>
+            <input id="contact-phone" type="tel" autocomplete="off">
+            <label for="contact-email">Імейл</label>
+            <input id="contact-email" type="email" autocomplete="off">
+            <label for="contact-code">Секретний код</label>
+            <input id="contact-code" type="text" autocomplete="off" maxlength="24">
+            <p class="form-hint">Укажіть хоча б один ідентифікатор контакту.</p>
+            <div class="group-form-actions">
+              <button class="tool-button" id="cancel-contact" type="button">Скасувати</button>
+              <button class="create-group-submit" type="submit">Додати</button>
+            </div>
+          </form>
+        </section>
         <button class="create-group-button" id="create-group-button" type="button">+ Створити групу</button>
         <form class="group-form" id="group-form" hidden>
           <label for="group-name">Назва групи</label>

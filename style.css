@@ -54,9 +54,81 @@ input {
 
 .chat-sidebar {
   min-width: 0;
+  overflow-y: auto;
   padding: 24px 14px;
   background: #fbfcff;
   border-right: 1px solid #e9edf4;
+}
+
+.account-section {
+  display: grid;
+}
+
+.account-form {
+  display: grid;
+  gap: 7px;
+  margin: 0 10px 12px;
+  padding: 12px;
+  background: #f1f4fb;
+  border-radius: 11px;
+  font-size: 0.75rem;
+}
+
+.account-form[hidden] {
+  display: none;
+}
+
+.account-form h3 {
+  margin: 0 0 2px;
+  font-size: 0.85rem;
+}
+
+.account-form input,
+.account-form select {
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  color: #202b3c;
+  background: #fff;
+  border: 1px solid #dfe6f3;
+  border-radius: 7px;
+  font: inherit;
+}
+
+.profile-preview,
+.code-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.profile-preview {
+  padding: 5px 0;
+  font-weight: 650;
+}
+
+.profile-preview .avatar {
+  width: 38px;
+  height: 38px;
+}
+
+.code-row input {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.code-row .tool-button {
+  min-height: 34px;
+  padding: 0 8px;
+  font-size: 0.7rem;
+}
+
+.form-hint {
+  margin: 0;
+  color: #778398;
+  font-size: 0.68rem;
 }
 
 .sidebar-heading {
@@ -110,6 +182,10 @@ input {
   background: #f1f4fb;
   border-radius: 11px;
   font-size: 0.75rem;
+}
+
+.group-form[hidden] {
+  display: none;
 }
 
 .group-form input,
@@ -767,12 +843,13 @@ input {
 @media (max-width: 600px) {
   .chat-app {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: 148px minmax(0, 1fr);
+    grid-template-rows: 230px minmax(0, 1fr);
     height: calc(100dvh - 76px);
   }
 
   .chat-sidebar {
     min-height: 0;
+    overflow-y: auto;
     padding: 12px 10px 8px;
     border-right: 0;
     border-bottom: 1px solid #e9edf4;
@@ -872,7 +949,7 @@ input {
 
 @media (max-width: 360px) {
   .chat-app {
-    grid-template-rows: 140px minmax(0, 1fr);
+    grid-template-rows: 220px minmax(0, 1fr);
   }
 
   .chat-list > li {
