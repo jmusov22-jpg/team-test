@@ -250,6 +250,10 @@ input {
   list-style: none;
 }
 
+.chat-list[hidden] {
+  display: none;
+}
+
 .chat-empty {
   display: flex;
   justify-content: center;
@@ -482,6 +486,7 @@ input {
 .message-text {
   margin: 0;
   overflow-wrap: anywhere;
+  white-space: pre-wrap;
   font-size: 0.88rem;
   line-height: 1.5;
 }
@@ -507,13 +512,18 @@ input {
 
 .message-options,
 .message-compose-row {
-  display: flex;
   align-items: center;
   gap: 10px;
 }
 
 .message-options {
+  display: flex;
   justify-content: space-between;
+}
+
+.message-compose-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .auto-translate {
@@ -571,24 +581,35 @@ input {
 .message-input-wrap {
   position: relative;
   display: flex;
+  grid-column: 1 / -1;
   align-items: center;
-  flex: 1;
   min-width: 0;
   gap: 7px;
 }
 
-.message-input-wrap > input {
+.message-input-wrap > textarea {
   min-width: 0;
+  min-height: 44px;
+  max-height: 144px;
   flex: 1;
-  padding: 12px 15px;
+  overflow-y: hidden;
+  padding: 11px 15px;
   color: #202b3c;
   background: #f7f8fb;
   border: 1px solid #e6eaf1;
   border-radius: 11px;
+  font: inherit;
+  line-height: 1.35;
+  resize: none;
 }
 
-.message-input-wrap > input::placeholder {
+.message-input-wrap > textarea::placeholder {
   color: #9aa4b3;
+}
+
+.message-search-match .message-bubble {
+  outline: 3px solid #e6bb51;
+  outline-offset: 3px;
 }
 
 .sticker-toggle {
@@ -656,6 +677,7 @@ input {
 }
 
 .message-compose-row > button[type="submit"] {
+  grid-column: 2;
   padding: 0 19px;
   color: #fff;
   background: #5578d8;
@@ -671,13 +693,18 @@ input {
 .tool-button:focus-visible,
 .message-edit-button:focus-visible,
 .message-action-button:focus-visible,
-.message-edit-input:focus-visible {
+.message-edit-input:focus-visible,
+.message-input-wrap > textarea:focus-visible {
   outline: 3px solid #9bb3f4;
   outline-offset: 2px;
 }
 
 .message-compose-row > button[type="submit"]:hover {
   background: #4265c5;
+}
+
+.message-compose-row > .tool-button {
+  grid-column: 1;
 }
 
 .message-edit-button {
@@ -824,7 +851,7 @@ input {
     padding: 12px;
   }
 
-  .message-input-wrap > input {
+  .message-input-wrap > textarea {
     padding: 10px;
     font-size: 0.8rem;
   }
@@ -911,7 +938,7 @@ input {
     font-size: 0.72rem;
   }
 
-  .message-input-wrap > input,
+  .message-input-wrap > textarea,
   .message-compose-row > button[type="submit"],
   .message-compose-row > .tool-button,
   .sticker-toggle {
@@ -965,7 +992,7 @@ input {
     padding: 10px;
   }
 
-  .message-input-wrap > input {
+  .message-input-wrap > textarea {
     padding-inline: 10px;
   }
 

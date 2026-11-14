@@ -80,9 +80,10 @@
           </div>
         </form>
         <div class="chat-search-wrap">
-          <label class="visually-hidden" for="chat-search">Пошук чату</label>
-          <input id="chat-search" class="chat-search" type="search" placeholder="Пошук чату..." autocomplete="off" aria-label="Пошук чатів">
+          <label class="visually-hidden" for="chat-search">Пошук чатів і повідомлень</label>
+          <input id="chat-search" class="chat-search" type="search" placeholder="Пошук чатів і повідомлень..." autocomplete="off" aria-label="Пошук чатів і повідомлень">
         </div>
+        <ul class="chat-list search-results" id="search-results" aria-label="Результати пошуку" hidden></ul>
         <ul class="chat-list" id="chat-list" aria-label="Список чатів"></ul>
       </aside>
 
@@ -109,7 +110,7 @@
           <label class="visually-hidden" for="message">Повідомлення</label>
           <div class="message-compose-row">
             <div class="message-input-wrap">
-              <input id="message" name="message" type="text" placeholder="Напишіть повідомлення..." autocomplete="off" required>
+              <textarea id="message" name="message" placeholder="Напишіть повідомлення..." autocomplete="off" rows="1" required></textarea>
               <button class="sticker-toggle" id="sticker-toggle" type="button" aria-label="Відкрити стікери" aria-haspopup="true" aria-expanded="false" aria-controls="sticker-picker">😊</button>
               <div class="sticker-picker" id="sticker-picker" role="group" aria-label="Вибір стікера" hidden>
                 <p class="sticker-picker-title">Оберіть стікер</p>

@@ -73,6 +73,7 @@ const stickerToggle = document.querySelector("#sticker-toggle");
 const stickerPicker = document.querySelector("#sticker-picker");
 const stickerGrid = document.querySelector("#sticker-grid");
 const chatSearchInput = document.querySelector("#chat-search");
+const searchResultsList = document.querySelector("#search-results");
 const autoTranslateInput = document.querySelector("#auto-translate");
 const improveMessageButton = document.querySelector("#improve-message");
 const recordVoiceButton = document.querySelector("#record-voice");
@@ -316,14 +317,95 @@ function getErrorMessage(error) {
   return error instanceof Error ? error.message : "Сталася невідома помилка.";
 }
 
-function getFilteredChats() {
+function renderSearchResults() {
   const normalizedQuery = searchQuery.trim().toLowerCase();
+  const chatMatches = chats.filter((chat) => chat.name.toLowerCase().includes(normalizedQuery));
+  const messageMatches = [];
 
-  if (!normalizedQuery) {
-    return chats;
+  chats.forEach((chat) => {
+    chat.messages.forEach((message, messageIndex) => {
+      if (
+        message.text.toLowerCase().includes(normalizedQuery)
+        || (typeof message.translatedText === "string"
+          && message.translatedText.toLowerCase().includes(normalizedQuery))
+      ) {
+        messageMatches.push({ chat, message, messageIndex });
+      }
+    });
+  });
+
+  searchResultsList.replaceChildren();
+  const matchingChats = new Set([
+    ...chatMatches,
+    ...messageMatches.map(({ chat }) => chat),
+  ]);
+  chatCount.textContent = String(matchingChats.size);
+  chatCount.setAttribute("aria-label", "Кількість чатів у результатах пошуку");
+
+  if (chatMatches.length === 0 && messageMatches.length === 0) {
+    const emptyItem = document.createElement("li");
+    const emptyMessage = document.createElement("p");
+
+    emptyItem.className = "chat-empty";
+    emptyMessage.textContent = "Чатів або повідомлень не знайдено";
+    emptyItem.append(emptyMessage);
+    searchResultsList.append(emptyItem);
+    return;
   }
 
-  return chats.filter((chat) => chat.name.toLowerCase().includes(normalizedQuery));
+  const appendResult = (chat, previewText, timeText, onClick) => {
+    const item = document.createElement("li");
+    const button = document.createElement("button");
+    const avatar = document.createElement("span");
+    const status = document.createElement("span");
+    const details = document.createElement("span");
+    const name = document.createElement("span");
+    const preview = document.createElement("span");
+    const time = document.createElement("time");
+
+    button.type = "button";
+    button.className = "chat-item";
+    button.addEventListener("click", onClick);
+
+    avatar.className = `avatar avatar-${chat.color}`;
+    avatar.setAttribute("aria-hidden", "true");
+    avatar.textContent = chat.avatar || chat.initials;
+    status.className = `user-status status-${chat.isGroup ? "group" : chat.status}`;
+    status.setAttribute("aria-label", getChatStatus(chat));
+    status.title = getChatStatus(chat);
+    avatar.append(status);
+
+    details.className = "chat-details";
+    name.className = "chat-name";
+    name.textContent = chat.name;
+    preview.className = "chat-preview";
+    preview.textContent = previewText;
+    time.className = "chat-time";
+    time.textContent = timeText;
+
+    details.append(name, preview);
+    button.append(avatar, details, time);
+    item.append(button);
+    searchResultsList.append(item);
+  };
+
+  chatMatches.forEach((chat) => {
+    appendResult(chat, "Відкрити чат", "", () => selectChat(chat.id));
+  });
+
+  messageMatches.forEach(({ chat, message, messageIndex }) => {
+    const sender = message.sender === "you" ? "Ви" : (message.author || chat.name);
+    appendResult(chat, `${sender}: ${message.text}`, message.time, () => {
+      selectChat(chat.id);
+      const target = messagesList.querySelector(`[data-message-index="${messageIndex}"]`);
+
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.classList.add("message-search-match");
+        window.setTimeout(() => target.classList.remove("message-search-match"), 2000);
+      }
+    });
+  });
 }
 
 function getChatStatus(chat) {
@@ -347,8 +429,20 @@ function populateGroupMembers() {
 }
 
 function renderChatList() {
-  const visibleChats = getFilteredChats();
+  const normalizedQuery = searchQuery.trim();
+
+  if (normalizedQuery) {
+    chatList.hidden = true;
+    searchResultsList.hidden = false;
+    renderSearchResults();
+    return;
+  }
+
+  chatList.hidden = false;
+  searchResultsList.hidden = true;
+  const visibleChats = chats;
   chatCount.textContent = String(visibleChats.length);
+  chatCount.setAttribute("aria-label", "Кількість чатів");
   chatList.replaceChildren();
 
   if (visibleChats.length === 0) {
@@ -405,7 +499,7 @@ function renderChatList() {
 function renderMessages(chat) {
   messagesList.replaceChildren();
 
-  chat.messages.forEach((message) => {
+  chat.messages.forEach((message, messageIndex) => {
     const item = document.createElement("li");
     const article = document.createElement("article");
     const sender = document.createElement("p");
@@ -413,6 +507,7 @@ function renderMessages(chat) {
     const time = document.createElement("time");
 
     item.className = `message message-${message.sender}`;
+    item.dataset.messageIndex = String(messageIndex);
     article.className = "message-bubble";
     sender.className = "message-sender";
     sender.textContent = `${message.sender === "you" ? "Ви" : (message.author || chat.name)}${message.edited ? " · змінено" : ""}`;
@@ -586,18 +681,6 @@ function selectChat(chatId, shouldPersist = true) {
 
 chatSearchInput.addEventListener("input", (event) => {
   searchQuery = event.target.value;
-  const filteredChats = getFilteredChats();
-
-  if (filteredChats.length === 0) {
-    renderChatList();
-    return;
-  }
-
-  if (!filteredChats.some((chat) => chat.id === activeChatId)) {
-    selectChat(filteredChats[0].id);
-    return;
-  }
-
   renderChatList();
 });
 
@@ -624,9 +707,23 @@ messageForm.addEventListener("submit", (event) => {
   });
   persistState();
   messageInput.value = "";
+  resizeMessageInput();
   renderChatList();
   renderMessages(chat);
   messageInput.focus();
+});
+
+function resizeMessageInput() {
+  messageInput.style.height = "auto";
+  messageInput.style.height = `${Math.min(messageInput.scrollHeight, 144)}px`;
+  messageInput.style.overflowY = messageInput.scrollHeight > 144 ? "auto" : "hidden";
+}
+
+messageInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+    event.preventDefault();
+    messageForm.requestSubmit();
+  }
 });
 
 createGroupButton.addEventListener("click", () => {
@@ -812,6 +909,7 @@ improveMessageButton.addEventListener("click", async () => {
       { text, language: "uk" },
       "suggestion"
     );
+    resizeMessageInput();
     showFeatureStatus("Перегляньте й за потреби відредагуйте запропонований текст.");
   } catch (error) {
     showFeatureStatus(getErrorMessage(error));
@@ -928,6 +1026,7 @@ recordVoiceButton.addEventListener("click", () => {
 
 messageInput.addEventListener("input", () => {
   showFeatureStatus("");
+  resizeMessageInput();
 });
 
 profileNameInput.addEventListener("input", updateProfilePreview);
@@ -937,3 +1036,4 @@ profileColorInput.addEventListener("change", updateProfilePreview);
 restoreSavedState();
 populateProfileForm();
 selectChat(activeChatId, false);
+resizeMessageInput();
