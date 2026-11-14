@@ -108,7 +108,9 @@ const contactPhoneInput = document.querySelector("#contact-phone");
 const contactEmailInput = document.querySelector("#contact-email");
 const contactCodeInput = document.querySelector("#contact-code");
 const cancelContactButton = document.querySelector("#cancel-contact");
+const themeToggleButton = document.querySelector("#theme-toggle");
 const storageKey = "teamchat-state-v1";
+const themeStorageKey = "teamchat-theme-v1";
 const stickers = [
   "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🙂", "🙃", "😉", "😊", "😍",
   "🥰", "😘", "😎", "🤩", "🥳", "🤗", "🤔", "😴", "😭", "😡", "🤯", "😱",
@@ -1132,6 +1134,35 @@ recordVoiceButton.addEventListener("click", () => {
   startVoiceRecording();
 });
 
+function updateTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  themeToggleButton.textContent = theme === "dark" ? "☀️ Світла тема" : "🌙 Темна тема";
+  themeToggleButton.setAttribute(
+    "aria-label",
+    theme === "dark" ? "Увімкнути світлу тему" : "Увімкнути темну тему",
+  );
+}
+
+function restoreTheme() {
+  try {
+    updateTheme(localStorage.getItem(themeStorageKey) === "dark" ? "dark" : "light");
+  } catch (error) {
+    updateTheme("light");
+    showFeatureStatus(`Не вдалося відновити тему: ${getErrorMessage(error)}`);
+  }
+}
+
+themeToggleButton.addEventListener("click", () => {
+  const theme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  updateTheme(theme);
+
+  try {
+    localStorage.setItem(themeStorageKey, theme);
+  } catch (error) {
+    showFeatureStatus(`Не вдалося зберегти тему: ${getErrorMessage(error)}`);
+  }
+});
+
 messageInput.addEventListener("input", () => {
   showFeatureStatus("");
   resizeMessageInput();
@@ -1145,3 +1176,4 @@ restoreSavedState();
 populateProfileForm();
 selectChat(activeChatId, false);
 resizeMessageInput();
+restoreTheme();

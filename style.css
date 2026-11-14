@@ -25,6 +25,9 @@ input {
 }
 
 .app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   width: min(1120px, calc(100% - 48px));
   margin: 0 auto;
   padding: 26px 0 20px;
@@ -36,6 +39,27 @@ input {
   font-size: 1.4rem;
   font-weight: 750;
   letter-spacing: -0.04em;
+}
+
+.theme-toggle {
+  min-height: 38px;
+  padding: 0 12px;
+  color: #52688e;
+  background: #fff;
+  border: 1px solid #e5eaf2;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.theme-toggle:hover {
+  background: #edf2fb;
+}
+
+.theme-toggle:focus-visible {
+  outline: 3px solid #9bb3f4;
+  outline-offset: 2px;
 }
 
 .chat-app {
@@ -859,6 +883,142 @@ input {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   clip-path: inset(50%);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  color: #e4eaf4;
+  background: #111827;
+}
+
+:root[data-theme="dark"] body {
+  background:
+    radial-gradient(ellipse at 10% 0%, #1d2b46 0, transparent 34rem),
+    #111827;
+}
+
+:root[data-theme="dark"] .app-header h1 {
+  color: #dce6ff;
+}
+
+:root[data-theme="dark"] .theme-toggle,
+:root[data-theme="dark"] .chat-app,
+:root[data-theme="dark"] .account-form input,
+:root[data-theme="dark"] .account-form select,
+:root[data-theme="dark"] .group-form input,
+:root[data-theme="dark"] .group-form select,
+:root[data-theme="dark"] .sticker-picker,
+:root[data-theme="dark"] .message-edit-input {
+  color: #e4eaf4;
+  background: #1c2738;
+  border-color: #354258;
+}
+
+:root[data-theme="dark"] .chat-sidebar,
+:root[data-theme="dark"] .group-members-panel {
+  background: #172131;
+}
+
+:root[data-theme="dark"] .chat-sidebar {
+  border-color: #2b374a;
+}
+
+:root[data-theme="dark"] .account-form,
+:root[data-theme="dark"] .group-form {
+  background: #202c3e;
+}
+
+:root[data-theme="dark"] .chat-count,
+:root[data-theme="dark"] .create-group-button,
+:root[data-theme="dark"] .tool-button,
+:root[data-theme="dark"] .message-edit-button,
+:root[data-theme="dark"] .message-action-button,
+:root[data-theme="dark"] .sticker-toggle {
+  color: #c4d2ec;
+  background: #29374d;
+}
+
+:root[data-theme="dark"] .create-group-button:hover,
+:root[data-theme="dark"] .tool-button:hover,
+:root[data-theme="dark"] .message-edit-button:hover,
+:root[data-theme="dark"] .message-action-button:hover,
+:root[data-theme="dark"] .sticker-toggle:hover,
+:root[data-theme="dark"] .sticker-option:hover,
+:root[data-theme="dark"] .theme-toggle:hover {
+  background: #354660;
+}
+
+:root[data-theme="dark"] .chat-search,
+:root[data-theme="dark"] .message-input-wrap > textarea {
+  color: #e4eaf4;
+  background: #111b29;
+  border-color: #354258;
+}
+
+:root[data-theme="dark"] .chat-item:hover {
+  background: #202d40;
+}
+
+:root[data-theme="dark"] .chat-item[aria-pressed="true"] {
+  background: #263757;
+}
+
+:root[data-theme="dark"] .conversation-header,
+:root[data-theme="dark"] .group-members-panel,
+:root[data-theme="dark"] .message-form {
+  border-color: #2b374a;
+}
+
+:root[data-theme="dark"] .message-bubble {
+  background: #253247;
+}
+
+:root[data-theme="dark"] .message-you .message-bubble {
+  background: #4969c0;
+}
+
+:root[data-theme="dark"] .app-header,
+:root[data-theme="dark"] .conversation-header h2,
+:root[data-theme="dark"] .sidebar-heading h2,
+:root[data-theme="dark"] .account-form h3,
+:root[data-theme="dark"] .chat-name,
+:root[data-theme="dark"] .profile-preview,
+:root[data-theme="dark"] .group-member-name {
+  color: #e4eaf4;
+}
+
+:root[data-theme="dark"] .form-hint,
+:root[data-theme="dark"] .chat-preview,
+:root[data-theme="dark"] .chat-time,
+:root[data-theme="dark"] .conversation-header p,
+:root[data-theme="dark"] .group-members-heading h3,
+:root[data-theme="dark"] .message-time,
+:root[data-theme="dark"] .auto-translate,
+:root[data-theme="dark"] .chat-empty {
+  color: #a4b0c3;
+}
+
+:root[data-theme="dark"] .chat-search::placeholder,
+:root[data-theme="dark"] .message-input-wrap > textarea::placeholder {
+  color: #8492a8;
+}
+
+:root[data-theme="dark"] .message-sender,
+:root[data-theme="dark"] .message-translation,
+:root[data-theme="dark"] .sticker-picker-title {
+  color: #b6c8ed;
+}
+
+:root[data-theme="dark"] .message-translation {
+  border-color: rgb(182 200 237 / 24%);
+}
+
+:root[data-theme="dark"] .status-text-offline {
+  color: #a4b0c3 !important;
+}
+
+:root[data-theme="dark"] .user-status {
+  border-color: #172131;
 }
 
 @media (max-width: 720px) {
