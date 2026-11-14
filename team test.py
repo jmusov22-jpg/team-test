@@ -14,6 +14,9 @@ class TextToolApp:
         self.root.resizable(False, False)
         self.root.configure(bg="#F4F6F5")
 
+        self.reaction_counts = {"👍": 0, "❤️": 0, "😂": 0, "😮": 0, "😢": 0}
+        self.active_reaction = None
+
         self._create_widgets()
 
     def _create_widgets(self):
@@ -80,6 +83,27 @@ class TextToolApp:
             wraplength=300,
         )
         self.label_result.pack(anchor="center", pady=(8, 0))
+
+        self.reaction_bar = tk.Frame(self.result_frame, bg="#E8EEEC")
+        self.reaction_bar.pack(pady=(8, 0))
+        self.reaction_buttons = {}
+        for emoji in ["👍", "❤️", "😂", "😮", "😢"]:
+            btn = tk.Button(
+                self.reaction_bar,
+                text=f"{emoji} {self.reaction_counts[emoji]}",
+                font=("Arial", 10),
+                width=6,
+                bg="#F4F6F5",
+                fg="#34413F",
+                activebackground="#DDE7E5",
+                relief="flat",
+                bd=0,
+                cursor="hand2",
+                command=lambda reaction=emoji: self.add_reaction(reaction),
+            )
+            btn.pack(side="left", padx=4)
+            self.reaction_buttons[emoji] = btn
+
         tk.Button(
             self.result_frame,
             text="Скопіювати",
@@ -113,6 +137,28 @@ class TextToolApp:
         self.root.clipboard_clear()
         self.root.clipboard_append(result)
         self.root.update()
+
+    def add_reaction(self, reaction):
+        if self.active_reaction == reaction:
+            self.reaction_counts[reaction] = max(0, self.reaction_counts[reaction] - 1)
+            self.active_reaction = None
+        else:
+            if self.active_reaction and self.active_reaction in self.reaction_counts:
+                self.reaction_counts[self.active_reaction] = max(0, self.reaction_counts[self.active_reaction] - 1)
+            self.reaction_counts[reaction] += 1
+            self.active_reaction = reaction
+
+        self._refresh_reaction_buttons()
+
+    def _refresh_reaction_buttons(self):
+        for emoji, button in self.reaction_buttons.items():
+            is_active = self.active_reaction == emoji
+            button.config(
+                text=f"{emoji} {self.reaction_counts[emoji]}",
+                bg="#F4F6F5" if not is_active else "#D5EAE5",
+                fg="#34413F",
+                relief="flat",
+            )
 
     def greet_user(self):
         text = self.get_text().strip()
