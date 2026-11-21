@@ -419,6 +419,9 @@ class TeamChatRequestHandler(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(ROOT), **kwargs)
 
     def do_GET(self):
+        if urlsplit(self.path).path == "/health":
+            self._send_json({"status": "ok"})
+            return
         if urlsplit(self.path).path == "/api/session":
             user = get_session_user(self)
             self._send_json({"authenticated": user is not None, "user": user})
@@ -598,7 +601,7 @@ class TeamChatRequestHandler(SimpleHTTPRequestHandler):
 
 
 def main():
-    host = os.environ.get("HOST", "127.0.0.1")
+    host = os.environ.get("HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", "8000"))
     init_database()
     server = ThreadingHTTPServer((host, port), TeamChatRequestHandler)
