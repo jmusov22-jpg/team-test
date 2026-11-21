@@ -2,8 +2,10 @@ import json
 import os
 import threading
 import unittest
+import tempfile
 from io import BytesIO
 from http.server import ThreadingHTTPServer
+from pathlib import Path
 from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
@@ -14,6 +16,9 @@ import server
 class AiServiceEndpointTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.temp_directory = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+        server.DB_PATH = Path(cls.temp_directory.name) / "test-teamchat.db"
+        server.init_database()
         cls.http_server = ThreadingHTTPServer(("127.0.0.1", 0), server.TeamChatRequestHandler)
         cls.thread = threading.Thread(target=cls.http_server.serve_forever, daemon=True)
         cls.thread.start()
@@ -24,6 +29,7 @@ class AiServiceEndpointTests(unittest.TestCase):
         cls.http_server.shutdown()
         cls.http_server.server_close()
         cls.thread.join()
+        cls.temp_directory.cleanup()
 
     def post(self, path, payload):
         request = Request(
@@ -75,6 +81,55 @@ class AiServiceEndpointTests(unittest.TestCase):
         request = urlopen_mock.call_args.args[0]
         self.assertEqual(result, "Готовий текст")
         self.assertEqual(request.get_header("Authorization"), "Bearer test-key")
+
+    def test_database_state_round_trip(self):
+        state = {
+            "activeChatId": "chat-1",
+            "profile": {
+                "name": "Тест",
+                "phone": "+380",
+                "email": "test@example.com",
+                "avatar": "Т",
+                "color": "blue",
+                "code": "ABC123",
+            },
+            "chats": [
+                {
+                    "id": "chat-1",
+                    "name": "Тестовий чат",
+                    "initials": "ТЧ",
+                    "color": "coral",
+                    "status": "online",
+                    "messages": [
+                        {
+                            "sender": "you",
+                            "text": "Привіт",
+                            "time": "12:00",
+                            "datetime": "2026-11-21T12:00",
+                        },
+                    ],
+                },
+            ],
+        }
+
+        put_request = Request(
+            f"{self.base_url}/api/state",
+            data=json.dumps(state).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="PUT",
+        )
+        with urlopen(put_request, timeout=2) as response:
+            put_result = json.loads(response.read().decode("utf-8"))
+            self.assertEqual(response.status, 200)
+            self.assertTrue(put_result["saved"])
+
+        get_request = Request(f"{self.base_url}/api/state")
+        with urlopen(get_request, timeout=2) as response:
+            loaded = json.loads(response.read().decode("utf-8"))
+
+        self.assertEqual(loaded["profile"]["name"], "Тест")
+        self.assertEqual(loaded["activeChatId"], "chat-1")
+        self.assertEqual(loaded["chats"][0]["messages"][0]["text"], "Привіт")
 
 
 if __name__ == "__main__":

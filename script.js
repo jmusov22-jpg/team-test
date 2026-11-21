@@ -161,32 +161,62 @@ function isValidSavedState(state) {
     && typeof state.profile.name === "string";
 }
 
-function restoreSavedState() {
+async function restoreSavedState() {
   try {
-    const savedState = localStorage.getItem(storageKey);
-
-    if (!savedState) {
+    const response = await fetch("/api/state", { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(`Сервер повернув помилку (${response.status}).`);
+    }
+    const state = await response.json();
+    if (isValidSavedState(state)) {
+      chats = state.chats;
+      profile = { ...profile, ...state.profile };
+      activeChatId = chats.some((chat) => chat.id === state.activeChatId)
+        ? state.activeChatId
+        : chats[0].id;
       return;
     }
+  } catch (error) {
+    showFeatureStatus(`Базу даних тимчасово недоступно; спроба відновити локальну копію: ${getErrorMessage(error)}`);
+  }
 
-    const state = JSON.parse(savedState);
-    if (!isValidSavedState(state)) {
-      throw new Error("Збережені дані чату мають неочікуваний формат.");
+  try {
+    const savedState = localStorage.getItem(storageKey);
+    if (savedState) {
+      const state = JSON.parse(savedState);
+      if (isValidSavedState(state)) {
+        chats = state.chats;
+        profile = { ...profile, ...state.profile };
+        activeChatId = chats.some((chat) => chat.id === state.activeChatId)
+          ? state.activeChatId
+          : chats[0].id;
+      }
     }
-
-    chats = state.chats;
-    profile = { ...profile, ...state.profile };
-    activeChatId = chats.some((chat) => chat.id === state.activeChatId)
-      ? state.activeChatId
-      : chats[0].id;
   } catch (error) {
     showFeatureStatus(`Не вдалося відновити збережені дані: ${getErrorMessage(error)}`);
+  }
+}
+
+async function persistStateToDatabase() {
+  try {
+    const response = await fetch("/api/state", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chats, profile, activeChatId }),
+    });
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      throw new Error(result.error || `Сервер повернув помилку (${response.status}).`);
+    }
+  } catch (error) {
+    showFeatureStatus(`Не вдалося зберегти дані в базу: ${getErrorMessage(error)}`);
   }
 }
 
 function persistState() {
   try {
     localStorage.setItem(storageKey, JSON.stringify({ chats, profile, activeChatId }));
+    persistStateToDatabase();
     return true;
   } catch (error) {
     showFeatureStatus(`Не вдалося зберегти зміни: ${getErrorMessage(error)}`);
@@ -1172,8 +1202,12 @@ profileNameInput.addEventListener("input", updateProfilePreview);
 profileAvatarInput.addEventListener("input", updateProfilePreview);
 profileColorInput.addEventListener("change", updateProfilePreview);
 
-restoreSavedState();
-populateProfileForm();
-selectChat(activeChatId, false);
-resizeMessageInput();
-restoreTheme();
+async function initializeApp() {
+  await restoreSavedState();
+  populateProfileForm();
+  selectChat(activeChatId, false);
+  resizeMessageInput();
+  restoreTheme();
+}
+
+initializeApp();
