@@ -44,7 +44,14 @@
     <header class="app-header">
       <h1>TeamChat</h1>
       <div class="header-actions">
-        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Увімкнути темну тему">🌙 Темна тема</button>
+        <label class="theme-selector" for="theme-select">
+          <span>Тема</span>
+          <select id="theme-select" aria-label="Вибір теми">
+            <option value="system">Системна</option>
+            <option value="light">Світла</option>
+            <option value="dark">Темна</option>
+          </select>
+        </label>
         <button class="logout-button" id="logout-button" type="button">Вийти</button>
       </div>
     </header>

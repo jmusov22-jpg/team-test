@@ -112,7 +112,7 @@ const contactPhoneInput = document.querySelector("#contact-phone");
 const contactEmailInput = document.querySelector("#contact-email");
 const contactCodeInput = document.querySelector("#contact-code");
 const cancelContactButton = document.querySelector("#cancel-contact");
-const themeToggleButton = document.querySelector("#theme-toggle");
+const themeSelect = document.querySelector("#theme-select");
 const authScreen = document.querySelector("#auth-screen");
 const appShell = document.querySelector("#app-shell");
 const authTitle = document.querySelector("#auth-title");
@@ -1190,31 +1190,37 @@ recordVoiceButton.addEventListener("click", () => {
 });
 
 function updateTheme(theme) {
-  document.documentElement.dataset.theme = theme;
-  themeToggleButton.textContent = theme === "dark" ? "☀️ Світла тема" : "🌙 Темна тема";
-  themeToggleButton.setAttribute(
-    "aria-label",
-    theme === "dark" ? "Увімкнути світлу тему" : "Увімкнути темну тему",
-  );
+  const effectiveTheme = theme === "system"
+    ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+    : theme;
+  document.documentElement.dataset.theme = effectiveTheme;
+  themeSelect.value = theme;
 }
 
 function restoreTheme() {
   try {
-    updateTheme(localStorage.getItem(themeStorageKey) === "dark" ? "dark" : "light");
+    const savedTheme = localStorage.getItem(themeStorageKey);
+    updateTheme(["system", "light", "dark"].includes(savedTheme) ? savedTheme : "system");
   } catch (error) {
-    updateTheme("light");
+    updateTheme("system");
     showFeatureStatus(`Не вдалося відновити тему: ${getErrorMessage(error)}`);
   }
 }
 
-themeToggleButton.addEventListener("click", () => {
-  const theme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+themeSelect.addEventListener("change", () => {
+  const theme = themeSelect.value;
   updateTheme(theme);
 
   try {
     localStorage.setItem(themeStorageKey, theme);
   } catch (error) {
     showFeatureStatus(`Не вдалося зберегти тему: ${getErrorMessage(error)}`);
+  }
+});
+
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  if (themeSelect.value === "system") {
+    updateTheme("system");
   }
 });
 

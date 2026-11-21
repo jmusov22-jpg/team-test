@@ -134,23 +134,30 @@ button:active {
   letter-spacing: -0.04em;
 }
 
-.theme-toggle {
+.theme-selector {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #52688e;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.theme-selector select {
   min-height: 38px;
-  padding: 0 12px;
+  padding: 0 28px 0 10px;
   color: #52688e;
   background: #fff;
   border: 1px solid #e5eaf2;
   border-radius: 10px;
   cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 650;
 }
 
-.theme-toggle:hover {
+.theme-selector select:hover {
   background: #edf2fb;
 }
 
-.theme-toggle:focus-visible {
+.theme-selector select:focus-visible {
   outline: 3px solid #9bb3f4;
   outline-offset: 2px;
 }
@@ -994,7 +1001,8 @@ button:active {
   color: #dce6ff;
 }
 
-:root[data-theme="dark"] .theme-toggle,
+:root[data-theme="dark"] .theme-selector,
+:root[data-theme="dark"] .theme-selector select,
 :root[data-theme="dark"] .chat-app,
 :root[data-theme="dark"] .account-form input,
 :root[data-theme="dark"] .account-form select,
@@ -1037,7 +1045,7 @@ button:active {
 :root[data-theme="dark"] .message-action-button:hover,
 :root[data-theme="dark"] .sticker-toggle:hover,
 :root[data-theme="dark"] .sticker-option:hover,
-:root[data-theme="dark"] .theme-toggle:hover {
+:root[data-theme="dark"] .theme-selector select:hover {
   background: #354660;
 }
 
