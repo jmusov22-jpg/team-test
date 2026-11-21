@@ -325,6 +325,14 @@ stickerToggle.addEventListener("click", () => {
 });
 
 document.addEventListener("click", (event) => {
+  const clickedButton = event.target.closest("button");
+  if (clickedButton && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    clickedButton.classList.remove("button-click");
+    void clickedButton.offsetWidth;
+    clickedButton.classList.add("button-click");
+    window.setTimeout(() => clickedButton.classList.remove("button-click"), 280);
+  }
+
   if (!stickerPicker.hidden && !stickerPicker.contains(event.target) && !stickerToggle.contains(event.target)) {
     closeStickerPicker();
   }
@@ -771,6 +779,9 @@ function selectChat(chatId, shouldPersist = true) {
   conversationHeading.textContent = chat.name;
   conversationStatus.textContent = getChatStatus(chat);
   conversationStatus.className = `conversation-status status-text-${chat.isGroup ? "group" : chat.status}`;
+  messagesList.classList.remove("chat-switch-enter");
+  void messagesList.offsetWidth;
+  messagesList.classList.add("chat-switch-enter");
   groupMembersButton.hidden = !chat.isGroup;
   groupMembersButton.setAttribute("aria-expanded", "false");
   groupMembersPanel.hidden = true;
@@ -1233,6 +1244,9 @@ async function authenticate(path, payload) {
 function showAuthenticatedUser(user) {
   authScreen.hidden = true;
   appShell.hidden = false;
+  appShell.classList.remove("app-shell-enter");
+  void appShell.offsetWidth;
+  appShell.classList.add("app-shell-enter");
   if (user?.name) {
     profile = { ...profile, name: user.name };
   }

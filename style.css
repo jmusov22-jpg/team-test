@@ -24,6 +24,99 @@ input {
   font: inherit;
 }
 
+button {
+  transition:
+    transform 140ms ease,
+    background-color 140ms ease,
+    box-shadow 180ms ease,
+    filter 140ms ease;
+}
+
+button:active {
+  transform: scale(0.96);
+}
+
+.button-click {
+  animation: button-click 260ms ease-out;
+}
+
+@keyframes button-click {
+  0% { transform: scale(0.94); }
+  55% { transform: scale(1.025); }
+  100% { transform: scale(1); }
+}
+
+@keyframes panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes message-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes auth-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.auth-card {
+  animation: auth-enter 420ms cubic-bezier(.2,.75,.25,1);
+}
+
+.app-shell-enter {
+  animation: auth-enter 360ms cubic-bezier(.2,.75,.25,1);
+}
+
+.account-form:not([hidden]),
+.group-form:not([hidden]),
+.group-members-panel:not([hidden]),
+.sticker-picker:not([hidden]) {
+  animation: panel-enter 220ms cubic-bezier(.2,.75,.25,1);
+}
+
+.message {
+  animation: message-enter 260ms cubic-bezier(.2,.75,.25,1);
+}
+
+.chat-item {
+  transition:
+    background-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.chat-item:active {
+  transform: translateX(3px) scale(0.985);
+}
+
+.chat-item[aria-pressed="true"] {
+  animation: button-click 220ms ease-out;
+}
+
+.chat-switch-enter {
+  animation: panel-enter 260ms ease-out;
+}
+
 .app-header {
   display: flex;
   align-items: center;
