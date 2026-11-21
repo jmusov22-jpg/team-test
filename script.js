@@ -1,3 +1,7 @@
+if (window.location.protocol === "file:") {
+  window.location.replace("http://127.0.0.1:8000/");
+}
+
 const defaultChats = [
   {
     id: "olena",
@@ -109,6 +113,16 @@ const contactEmailInput = document.querySelector("#contact-email");
 const contactCodeInput = document.querySelector("#contact-code");
 const cancelContactButton = document.querySelector("#cancel-contact");
 const themeToggleButton = document.querySelector("#theme-toggle");
+const authScreen = document.querySelector("#auth-screen");
+const appShell = document.querySelector("#app-shell");
+const authTitle = document.querySelector("#auth-title");
+const authDescription = document.querySelector("#auth-description");
+const loginForm = document.querySelector("#login-form");
+const registerForm = document.querySelector("#register-form");
+const loginError = document.querySelector("#login-error");
+const registerError = document.querySelector("#register-error");
+const authSwitch = document.querySelector("#auth-switch");
+const logoutButton = document.querySelector("#logout-button");
 const storageKey = "teamchat-state-v1";
 const themeStorageKey = "teamchat-theme-v1";
 const stickers = [
@@ -1202,11 +1216,114 @@ profileNameInput.addEventListener("input", updateProfilePreview);
 profileAvatarInput.addEventListener("input", updateProfilePreview);
 profileColorInput.addEventListener("change", updateProfilePreview);
 
-async function initializeApp() {
-  await restoreSavedState();
+async function authenticate(path, payload) {
+  const response = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify(payload),
+  });
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.error || "Не вдалося виконати авторизацію.");
+  }
+  return result;
+}
+
+function showAuthenticatedUser(user) {
+  authScreen.hidden = true;
+  appShell.hidden = false;
+  if (user?.name) {
+    profile = { ...profile, name: user.name };
+  }
   populateProfileForm();
-  selectChat(activeChatId, false);
-  resizeMessageInput();
+  restoreTheme();
+}
+
+loginForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  loginError.textContent = "";
+  const submitButton = loginForm.querySelector("button");
+  submitButton.disabled = true;
+  try {
+    const result = await authenticate("/api/login", {
+      email: document.querySelector("#login-email").value,
+      password: document.querySelector("#login-password").value,
+    });
+    showAuthenticatedUser(result.user);
+  } catch (error) {
+    loginError.textContent = getErrorMessage(error);
+  } finally {
+    submitButton.disabled = false;
+  }
+});
+
+registerForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  registerError.textContent = "";
+  const submitButton = registerForm.querySelector("button");
+  submitButton.disabled = true;
+  try {
+    const result = await authenticate("/api/register", {
+      name: document.querySelector("#register-name").value,
+      email: document.querySelector("#register-email").value,
+      password: document.querySelector("#register-password").value,
+    });
+    showAuthenticatedUser(result.user);
+  } catch (error) {
+    registerError.textContent = getErrorMessage(error);
+  } finally {
+    submitButton.disabled = false;
+  }
+});
+
+authSwitch.addEventListener("click", () => {
+  const registrationMode = registerForm.hidden;
+  registerForm.hidden = !registrationMode;
+  loginForm.hidden = registrationMode;
+  authTitle.textContent = registrationMode ? "Створіть акаунт" : "З поверненням";
+  authDescription.textContent = registrationMode
+    ? "Зареєструйтесь, щоб почати користуватися TeamChat."
+    : "Увійдіть, щоб продовжити спілкування.";
+  authSwitch.textContent = registrationMode
+    ? "Вже є акаунт? Увійти"
+    : "Немає акаунта? Зареєструватися";
+  loginError.textContent = "";
+  registerError.textContent = "";
+});
+
+logoutButton.addEventListener("click", async () => {
+  try {
+    await fetch("/api/logout", { method: "POST", credentials: "same-origin" });
+  } catch (error) {
+    showFeatureStatus(getErrorMessage(error));
+  }
+  appShell.hidden = true;
+  authScreen.hidden = false;
+  loginForm.reset();
+  registerForm.reset();
+});
+
+async function initializeApp() {
+  try {
+    const response = await fetch("/api/session", { cache: "no-store", credentials: "same-origin" });
+    if (response.ok) {
+      const session = await response.json();
+      if (session.authenticated) {
+        showAuthenticatedUser(session.user);
+        await restoreSavedState();
+        populateProfileForm();
+        selectChat(activeChatId, false);
+        resizeMessageInput();
+        return;
+      }
+    }
+  } catch (error) {
+    // The auth screen remains visible when the session cannot be checked.
+  }
+
+  authScreen.hidden = false;
+  appShell.hidden = true;
   restoreTheme();
 }
 

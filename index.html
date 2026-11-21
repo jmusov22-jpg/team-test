@@ -8,9 +8,45 @@
     <script src="script.js" defer></script>
   </head>
   <body>
+    <section class="auth-screen" id="auth-screen" aria-label="Вхід у TeamChat">
+      <div class="auth-card">
+        <div class="auth-brand">
+          <span class="auth-logo" aria-hidden="true">T</span>
+          <div>
+            <p class="auth-kicker">TeamChat</p>
+            <h1 id="auth-title">З поверненням</h1>
+          </div>
+        </div>
+        <p class="auth-description" id="auth-description">Увійдіть, щоб продовжити спілкування.</p>
+        <form class="auth-form" id="login-form">
+          <label for="login-email">Імейл</label>
+          <input id="login-email" type="email" autocomplete="email" required>
+          <label for="login-password">Пароль</label>
+          <input id="login-password" type="password" autocomplete="current-password" minlength="6" required>
+          <p class="auth-error" id="login-error" role="alert"></p>
+          <button class="auth-submit" type="submit">Увійти</button>
+        </form>
+        <form class="auth-form" id="register-form" hidden>
+          <label for="register-name">Ім’я</label>
+          <input id="register-name" type="text" autocomplete="name" maxlength="40" required>
+          <label for="register-email">Імейл</label>
+          <input id="register-email" type="email" autocomplete="email" required>
+          <label for="register-password">Пароль</label>
+          <input id="register-password" type="password" autocomplete="new-password" minlength="6" required>
+          <p class="auth-error" id="register-error" role="alert"></p>
+          <button class="auth-submit" type="submit">Створити акаунт</button>
+        </form>
+        <button class="auth-switch" id="auth-switch" type="button">Немає акаунта? Зареєструватися</button>
+      </div>
+    </section>
+
+    <div id="app-shell" hidden>
     <header class="app-header">
       <h1>TeamChat</h1>
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Увімкнути темну тему">🌙 Темна тема</button>
+      <div class="header-actions">
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Увімкнути темну тему">🌙 Темна тема</button>
+        <button class="logout-button" id="logout-button" type="button">Вийти</button>
+      </div>
     </header>
 
     <main class="chat-app">
@@ -140,5 +176,6 @@
         </form>
       </section>
     </main>
+    </div>
   </body>
 </html>

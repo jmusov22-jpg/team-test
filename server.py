@@ -1,6 +1,11 @@
 import json
 import os
 import sqlite3
+import hashlib
+import hmac
+import secrets
+import base64
+import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -77,6 +82,21 @@ def init_database():
             );
 
             CREATE INDEX IF NOT EXISTS idx_messages_chat_id ON messages(chat_id, id);
+
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS sessions (
+                token TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                expires_at INTEGER NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
             """
         )
 
@@ -287,6 +307,61 @@ def save_state(state):
 init_database()
 
 
+def hash_password(password, salt=None):
+    salt = salt or secrets.token_bytes(16)
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 120000)
+    return "pbkdf2_sha256$120000$" + base64.urlsafe_b64encode(salt).decode("ascii") + "$" + base64.urlsafe_b64encode(digest).decode("ascii")
+
+
+def verify_password(password, encoded):
+    try:
+        algorithm, rounds, salt_text, digest_text = encoded.split("$", 3)
+        if algorithm != "pbkdf2_sha256":
+            return False
+        salt = base64.urlsafe_b64decode(salt_text)
+        expected = base64.urlsafe_b64decode(digest_text)
+        actual = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, int(rounds))
+        return hmac.compare_digest(actual, expected)
+    except (ValueError, TypeError):
+        return False
+
+
+def create_session(user_id):
+    token = secrets.token_urlsafe(32)
+    expires_at = int(time.time()) + 7 * 24 * 60 * 60
+    with get_database() as connection:
+        connection.execute(
+            "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)",
+            (token, user_id, expires_at),
+        )
+    return token
+
+
+def get_session_user(handler):
+    cookie_header = handler.headers.get("Cookie", "")
+    token = None
+    for item in cookie_header.split(";"):
+        key, separator, value = item.strip().partition("=")
+        if separator and key == "teamchat_session":
+            token = value
+            break
+    if not token:
+        return None
+
+    with get_database() as connection:
+        row = connection.execute(
+            """
+            SELECT u.id, u.name, u.email, s.expires_at
+            FROM sessions s JOIN users u ON u.id = s.user_id
+            WHERE s.token = ?
+            """,
+            (token,),
+        ).fetchone()
+    if row and row["expires_at"] >= int(time.time()):
+        return {"id": row["id"], "name": row["name"], "email": row["email"]}
+    return None
+
+
 def call_ai(system_prompt, text):
     api_key = os.environ.get("OPENAI_API_KEY", "").strip()
     if not api_key:
@@ -344,6 +419,10 @@ class TeamChatRequestHandler(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(ROOT), **kwargs)
 
     def do_GET(self):
+        if urlsplit(self.path).path == "/api/session":
+            user = get_session_user(self)
+            self._send_json({"authenticated": user is not None, "user": user})
+            return
         if urlsplit(self.path).path == "/api/state":
             try:
                 state = load_state()
@@ -374,6 +453,68 @@ class TeamChatRequestHandler(SimpleHTTPRequestHandler):
             self._send_json({"error": "Не вдалося зберегти дані в базу."}, 500)
 
     def do_POST(self):
+        path = urlsplit(self.path).path
+        if path in ("/api/register", "/api/login", "/api/logout"):
+            try:
+                if path == "/api/logout":
+                    self._logout()
+                    return
+
+                payload = self._read_json()
+                if not isinstance(payload, dict):
+                    raise ServiceError("Запит має бути JSON-об’єктом.", 400)
+
+                if path == "/api/register":
+                    name = str(payload.get("name", "")).strip()[:40]
+                    email = str(payload.get("email", "")).strip().lower()[:254]
+                    password = payload.get("password")
+                    if not name or not email or not isinstance(password, str):
+                        raise ServiceError("Введіть ім’я, імейл і пароль.", 400)
+                    if len(password) < 6:
+                        raise ServiceError("Пароль має містити щонайменше 6 символів.", 400)
+                    with get_database() as connection:
+                        try:
+                            cursor = connection.execute(
+                                "INSERT INTO users (name, email, password_hash, created_at) VALUES (?, ?, ?, ?)",
+                                (name, email, hash_password(password), time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())),
+                            )
+                            user_id = cursor.lastrowid
+                        except sqlite3.IntegrityError as error:
+                            raise ServiceError("Користувач із таким імейлом уже зареєстрований.", 409) from error
+                    token = create_session(user_id)
+                    self._send_json(
+                        {"authenticated": True, "user": {"id": user_id, "name": name, "email": email}},
+                        201,
+                        [("Set-Cookie", f"teamchat_session={token}; HttpOnly; Path=/; SameSite=Lax; Max-Age={7 * 24 * 60 * 60}")],
+                    )
+                    return
+
+                email = str(payload.get("email", "")).strip().lower()[:254]
+                password = payload.get("password")
+                if not email or not isinstance(password, str):
+                    raise ServiceError("Введіть імейл і пароль.", 400)
+                with get_database() as connection:
+                    row = connection.execute(
+                        "SELECT id, name, email, password_hash FROM users WHERE email = ?",
+                        (email,),
+                    ).fetchone()
+                if row is None or not verify_password(password, row["password_hash"]):
+                    raise ServiceError("Неправильний імейл або пароль.", 401)
+                token = create_session(row["id"])
+                self._send_json(
+                    {"authenticated": True, "user": {"id": row["id"], "name": row["name"], "email": row["email"]}},
+                    200,
+                    [("Set-Cookie", f"teamchat_session={token}; HttpOnly; Path=/; SameSite=Lax; Max-Age={7 * 24 * 60 * 60}")],
+                )
+            except ServiceError as error:
+                self._send_json({"error": str(error)}, error.status_code)
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                self._send_json({"error": "Надішліть коректний JSON-запит."}, 400)
+            except Exception:
+                self.log_error("Unexpected error while handling authentication")
+                self._send_json({"error": "Не вдалося обробити запит авторизації."}, 500)
+            return
+
         routes = {
             "/api/improve": (
                 "Покращи повідомлення українською, зберігаючи його зміст і тон. "
@@ -427,12 +568,31 @@ class TeamChatRequestHandler(SimpleHTTPRequestHandler):
 
         return json.loads(self.rfile.read(content_length).decode("utf-8"))
 
-    def _send_json(self, payload, status=200):
+    def _logout(self):
+        cookie_header = self.headers.get("Cookie", "")
+        token = None
+        for item in cookie_header.split(";"):
+            key, separator, value = item.strip().partition("=")
+            if separator and key == "teamchat_session":
+                token = value
+                break
+        if token:
+            with get_database() as connection:
+                connection.execute("DELETE FROM sessions WHERE token = ?", (token,))
+        self._send_json(
+            {"authenticated": False},
+            200,
+            [("Set-Cookie", "teamchat_session=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0")],
+        )
+
+    def _send_json(self, payload, status=200, headers=None):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        for name, value in headers or []:
+            self.send_header(name, value)
         self.end_headers()
         self.wfile.write(body)
 
